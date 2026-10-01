@@ -1,0 +1,14 @@
+# built things
+*.exe
+*.o
+*.obj
+build/
+
+# save data, made when the game runs
+scores.txt
+
+# OS and editor cruft
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
