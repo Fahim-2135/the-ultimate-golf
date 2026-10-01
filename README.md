@@ -6,7 +6,7 @@ Drag back from the ball, let go, and try to reach the hole before your strokes r
 
 ### [⬇ Download and play (Windows)](https://github.com/Fahim-2135/the-ultimate-golf/releases/latest)
 
-Unzip it, double-click the exe. No compiler, no raylib, no install.
+Right-click the zip, **Extract All**, then run the exe from the folder it makes. No compiler, no raylib, no install.
 
 ![The menu](screenshots/menu.png)
 

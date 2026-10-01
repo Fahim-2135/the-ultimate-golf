@@ -6437,8 +6437,48 @@ void draw_brief()
 }
 
 
+//the pictures and the sounds are read out of assets/, so the game has to stand in its own
+//folder, whatever folder it was started from (a shortcut, the command line, anywhere)
+void go_to_my_own_folder()
+{
+    const char *home = GetApplicationDirectory();
+    if (home!=0) ChangeDirectory(home);
+}
+
+
+//running the exe straight out of the zip leaves assets behind, and everything looks broken.
+//say so, in a window, because there is no console to print to
+void complain_about_missing_assets()
+{
+    InitWindow(960,460,"The Ultimate Golf");
+    SetTargetFPS(30);
+    SetExitKey(KEY_NULL);
+    while (!WindowShouldClose())
+    {
+        BeginDrawing();
+        ClearBackground(GetColor(0x131B2AFF));
+        DrawText("The assets folder is missing",50,60,42,GetColor(0xFFD34DFF));
+        DrawText("The game could not find its pictures and sounds.",50,140,26,RAYWHITE);
+        DrawText("This happens when the exe is started from inside the zip.",50,180,26,RAYWHITE);
+        DrawText("Right click the zip, choose \"Extract All\", open the folder",50,250,26,GetColor(0x6FE7FFFF));
+        DrawText("it makes, and run TheUltimateGolf.exe from in there.",50,290,26,GetColor(0x6FE7FFFF));
+        DrawText("The exe and the assets folder have to sit side by side.",50,360,24,GRAY);
+        DrawText("ESC or the X closes this.",50,405,22,GRAY);
+        if (IsKeyPressed(KEY_ESCAPE)) break;
+        EndDrawing();
+    }
+    CloseWindow();
+}
+
+
 int main()
 {
+    go_to_my_own_folder();
+    if (FileExists("assets/intro/intro_ball.png")==0)
+    {
+        complain_about_missing_assets();
+        return 0;
+    }
     InitWindow(1280,720,"the ultimate golf");
     int monitor = GetCurrentMonitor();
     screen_width = GetMonitorWidth(monitor);
