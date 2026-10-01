@@ -4,6 +4,10 @@ A 2D mini-golf game in C with [raylib](https://www.raylib.com/). Four hand-built
 
 Drag back from the ball, let go, and try to reach the hole before your strokes run out.
 
+### [⬇ Download and play (Windows)](https://github.com/Fahim-2135/the-ultimate-golf/releases/latest)
+
+Unzip it, double-click the exe. No compiler, no raylib, no install.
+
 ![The menu](screenshots/menu.png)
 
 ---
