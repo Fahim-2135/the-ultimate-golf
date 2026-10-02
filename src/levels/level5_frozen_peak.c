@@ -172,43 +172,42 @@ void l5_reset_level()
     l5_radius_ball = 7*l5_u;
     l5_radius_pot = 11*l5_u;
 
-    //THE ROUTE IS A SNAKE, and it is meant to be obvious at a glance:
-    //  along the bottom lane to the right, up the right-hand bridge,
-    //  back along the middle lane to the left, up the left-hand ramp,
-    //  along the top lane to the right, and up onto the summit.
-    //Nothing here is a puzzle. The difficulty is the wind, the ice and the
-    //things crossing your line.
-    l5_snow_ground[0] = l5_make_rect(60,840,1800,200);    //bottom lane
-    l5_snow_ground[1] = l5_make_rect(1560,700,300,150);   //right landing, top of the bridge
-    l5_snow_ground[2] = l5_make_rect(60,540,1800,170);    //middle lane
-    l5_snow_ground[3] = l5_make_rect(60,380,320,170);     //left ramp up to the top lane
-    l5_snow_ground[4] = l5_make_rect(60,210,1360,180);    //top lane, stops short of the summit
-    l5_snow_ground[5] = l5_make_rect(1420,110,440,230);   //the summit, joined to the top lane
-    //the lanes are the course: no stray ledges floating in the crevasse to read as a maze
-    l5_snow_ground[6] = l5_make_rect(-400,-400,10,10);
-    l5_snow_ground[7] = l5_make_rect(-400,-400,10,10);
-    l5_snow_ground[8] = l5_make_rect(-400,-400,10,10);
+    //SIX LANES, climbed one at a time, alternating ends. The whole climb is about
+    //10,000 design units of travel, so every lane can hold two or three things with
+    //hundreds of units of clear snow between them.
+    //   A bottom  -> right bridge -> B -> left bridge -> C -> right bridge
+    //   -> D -> left bridge -> E -> right bridge -> F summit
+    l5_snow_ground[0] = l5_make_rect(60,920,1640,130);    //A base camp
+    l5_snow_ground[1] = l5_make_rect(220,750,1640,130);   //B the glacier
+    l5_snow_ground[2] = l5_make_rect(60,580,1640,130);    //C the snowball run
+    l5_snow_ground[3] = l5_make_rect(220,410,1640,130);   //D the ice cave
+    l5_snow_ground[4] = l5_make_rect(60,240,1640,130);    //E the high traverse
+    l5_snow_ground[5] = l5_make_rect(220,90,1640,120);    //F the summit ridge
+    //the three snow ramps that join the lanes the bridges do not
+    l5_snow_ground[6] = l5_make_rect(220,580,170,300);    //B -> C, left
+    l5_snow_ground[7] = l5_make_rect(1530,410,170,300);   //C -> D, right
+    l5_snow_ground[8] = l5_make_rect(1600,90,260,280);    //E -> F, right
 
-    //black ice: the long slippery stretches, one per lane, all plainly visible
-    l5_black_ice[0] = l5_make_rect(620,880,520,120);      //bottom lane
-    l5_black_ice[1] = l5_make_rect(300,570,620,110);      //middle lane
-    l5_black_ice[2] = l5_make_rect(820,240,560,120);      //top lane
-    l5_black_ice[3] = l5_make_rect(1430,150,330,120);     //the summit approach
+    //one long stretch of black ice per lane, never the whole lane
+    l5_black_ice[0] = l5_make_rect(880,920,420,130);
+    l5_black_ice[1] = l5_make_rect(560,750,520,130);
+    l5_black_ice[2] = l5_make_rect(900,580,560,130);
+    l5_black_ice[3] = l5_make_rect(700,240,520,130);
 
-    //deep powder: brakes, right where you need them
-    l5_powder[0] = l5_make_rect(1300,880,180,130);
-    l5_powder[1] = l5_make_rect(120,570,150,110);
-    l5_powder[2] = l5_make_rect(1740,150,110,180);
+    //powder to stop in, at the end of the three nastiest legs
+    l5_powder[0] = l5_make_rect(1380,920,200,130);
+    l5_powder[1] = l5_make_rect(480,580,190,130);
+    l5_powder[2] = l5_make_rect(1640,90,200,120);
 
-    //drift pits, one on the bottom lane and one on the middle lane
-    l5_drift[0] = l5_make_rect(420,880,150,120);
-    l5_drift[1] = l5_make_rect(1180,560,160,120);
+    //two drift pits, far apart
+    l5_drift[0] = l5_make_rect(520,750,170,62);
+    l5_drift[1] = l5_make_rect(1180,410,170,62);
     l5_drift_timer = 0;
 
-    //bridge 0: the right-hand climb, bottom lane up to the landing
-    for (int i=0; i<5; i++) l5_plank[0][i] = l5_make_rect(1640+i*44,700,44,150);
-    //bridge 1: the left-hand climb, middle lane up to the top lane
-    for (int i=0; i<7; i++) l5_plank[1][i] = l5_make_rect(96+i*40,380,40,170);
+    //the two crumbling bridges: short, over an obvious gap, and they are the only way
+    //up at their end of the mountain
+    for (int i=0; i<5; i++) l5_plank[0][i] = l5_make_rect(1546+i*34,856,34,84);     //A -> B, right
+    for (int i=0; i<5; i++) l5_plank[1][i] = l5_make_rect(216+i*34,346,34,84);      //D -> E, left
     for (int b=0; b<2; b++)
     {
         for (int i=0; i<7; i++)
@@ -218,46 +217,46 @@ void l5_reset_level()
         }
     }
 
-    //the gondola carries you over the one gap in the top lane
-    l5_gondola = l5_make_rect(400,560,190,140);
+    //the gondola is a ferry along lane D, not a gate: catch it and it saves you shots
+    l5_gondola = l5_make_rect(400,415,170,120);
     l5_gondola_left = 300*l5_u;
-    l5_gondola_right = 1480*l5_u;
-    l5_gondola_speed = -210*l5_u;
+    l5_gondola_right = 1560*l5_u;
+    l5_gondola_speed = -200*l5_u;
 
-    //the snowball rolls down the middle lane towards you, growing as it comes
-    l5_snowball_from = l5_make_point(1500,620);
-    l5_snowball_to = l5_make_point(400,620);
-    l5_snowball_small = 16*l5_u;
-    l5_snowball_big = 46*l5_u;
+    //the snowball rolls the length of lane C, straight at you
+    l5_snowball_from = l5_make_point(1620,645);
+    l5_snowball_to = l5_make_point(180,645);
+    l5_snowball_small = 15*l5_u;
+    l5_snowball_big = 42*l5_u;
     l5_snowball = l5_snowball_from;
     l5_snowball_radius = l5_snowball_small;
     l5_snowball_travel = 0;
     l5_snowball_wait = 0;
     l5_shatter_timer = 0;
 
-    //icicles hanging over the top lane
-    l5_icicle[0] = l5_make_point(480,216);
-    l5_icicle[1] = l5_make_point(780,216);
-    l5_icicle[2] = l5_make_point(1080,216);
+    //icicles over lane D only, spread right out
+    l5_icicle[0] = l5_make_point(620,398);
+    l5_icicle[1] = l5_make_point(1020,398);
+    l5_icicle[2] = l5_make_point(1420,398);
     for (int i=0; i<3; i++)
     {
         l5_icicle_state[i] = 0;
         l5_icicle_fall[i] = 0;
     }
 
-    //pines stand BESIDE the lanes, never across them
-    l5_pine_radius = 26*l5_u;
-    l5_pine[0] = l5_make_point(240,1000);
-    l5_pine[1] = l5_make_point(980,1000);
-    l5_pine[2] = l5_make_point(1700,1000);
-    l5_pine[3] = l5_make_point(430,560);
-    l5_pine[4] = l5_make_point(1180,372);
+    //pines stand at the lane edges, two per lane at most, far apart
+    l5_pine_radius = 40*l5_u;
+    l5_pine[0] = l5_make_point(420,1040);
+    l5_pine[1] = l5_make_point(1240,1040);
+    l5_pine[2] = l5_make_point(760,866);
+    l5_pine[3] = l5_make_point(1500,696);
+    l5_pine[4] = l5_make_point(560,356);
 
-    //campfires: the three safe spots to stop and aim from, one per lane
-    l5_campfire_radius = 95*l5_u;
-    l5_campfire[0] = l5_make_point(880,960);
-    l5_campfire[1] = l5_make_point(1450,640);
-    l5_campfire[2] = l5_make_point(360,300);
+    //a campfire at the start of a lane is a safe place to aim from
+    l5_campfire_radius = 110*l5_u;
+    l5_campfire[0] = l5_make_point(240,985);
+    l5_campfire[1] = l5_make_point(1660,645);
+    l5_campfire[2] = l5_make_point(360,305);
 
     //the weather
     l5_wind_clock = 0;
@@ -265,32 +264,32 @@ void l5_reset_level()
     l5_wind.y = 0;
     l5_wind_strength = 0;
     l5_whiteout = 0;
-    l5_avalanche_wait = 26;
+    l5_avalanche_wait = 30;
     l5_avalanche_done = 0;
     l5_avalanche_state = 0;
     l5_avalanche_timer = 0;
     l5_avalanche_y = 0;
 
-    //ibex pace the lanes, so they cross your line without blocking the way
-    l5_ibex_radius = 26*l5_u;
-    l5_ibex[0] = l5_make_point(700,930);
-    l5_ibex_from[0] = 620*l5_u;
-    l5_ibex_to[0] = 1120*l5_u;
-    l5_ibex_speed[0] = 90*l5_u;
-    l5_ibex[1] = l5_make_point(900,620);
-    l5_ibex_from[1] = 700*l5_u;
-    l5_ibex_to[1] = 1150*l5_u;
-    l5_ibex_speed[1] = -105*l5_u;
-    l5_ibex[2] = l5_make_point(700,300);
-    l5_ibex_from[2] = 560*l5_u;
-    l5_ibex_to[2] = 1180*l5_u;
-    l5_ibex_speed[2] = 110*l5_u;
+    //one ibex per lane, pacing a long beat
+    l5_ibex_radius = 24*l5_u;
+    l5_ibex[0] = l5_make_point(900,985);
+    l5_ibex_from[0] = 700*l5_u;
+    l5_ibex_to[0] = 1300*l5_u;
+    l5_ibex_speed[0] = 85*l5_u;
+    l5_ibex[1] = l5_make_point(1200,815);
+    l5_ibex_from[1] = 1000*l5_u;
+    l5_ibex_to[1] = 1700*l5_u;
+    l5_ibex_speed[1] = -95*l5_u;
+    l5_ibex[2] = l5_make_point(700,305);
+    l5_ibex_from[2] = 500*l5_u;
+    l5_ibex_to[2] = 1300*l5_u;
+    l5_ibex_speed[2] = 105*l5_u;
 
-    //hares sit off to the side
-    l5_hare_home[0][0] = 180; l5_hare_home[0][1] = 1000;
-    l5_hare_home[1][0] = 1760; l5_hare_home[1][1] = 1000;
-    l5_hare_home[2][0] = 160; l5_hare_home[2][1] = 690;
-    l5_hare_home[3][0] = 1800; l5_hare_home[3][1] = 290;
+    //hares off at the ends, pure scenery
+    l5_hare_home[0][0] = 140; l5_hare_home[0][1] = 1040;
+    l5_hare_home[1][0] = 1800; l5_hare_home[1][1] = 870;
+    l5_hare_home[2][0] = 120; l5_hare_home[2][1] = 700;
+    l5_hare_home[3][0] = 1810; l5_hare_home[3][1] = 150;
     for (int i=0; i<4; i++)
     {
         l5_hare[i] = l5_make_point(l5_hare_home[i][0],l5_hare_home[i][1]);
@@ -298,44 +297,45 @@ void l5_reset_level()
         l5_hare_rest[i] = 1 + i*0.7;
     }
 
-    //flag lines strung over each lane: they lean with the wind you are about to fight
-    l5_flagline[0] = l5_make_point(300,860);
-    l5_flagline_width[0] = 380*l5_u;
-    l5_flagline[1] = l5_make_point(1000,556);
-    l5_flagline_width[1] = 380*l5_u;
-    l5_flagline[2] = l5_make_point(420,226);
-    l5_flagline_width[2] = 380*l5_u;
+    //flag lines hang over the gaps between lanes, where they are easy to read
+    l5_flagline[0] = l5_make_point(500,895);
+    l5_flagline_width[0] = 420*l5_u;
+    l5_flagline[1] = l5_make_point(900,555);
+    l5_flagline_width[1] = 420*l5_u;
+    l5_flagline[2] = l5_make_point(700,215);
+    l5_flagline_width[2] = 420*l5_u;
 
-    //the toboggan runs ACROSS the bottom lane, so it is a timing problem, not a maze
-    l5_toboggan = l5_make_rect(1180,850,110,150);
-    l5_toboggan_from = 850*l5_u;
-    l5_toboggan_to = 1000*l5_u;
-    l5_toboggan_speed = 170*l5_u;
+    //the toboggan runs across lane E, a timing problem on its own
+    l5_toboggan = l5_make_rect(1120,240,100,130);
+    l5_toboggan_from = 240*l5_u;
+    l5_toboggan_to = 370*l5_u;
+    l5_toboggan_speed = 150*l5_u;
 
-    //crates and boulders sit along the lanes as things to go round, not through
-    l5_crate[0] = l5_make_rect(600,950,70,70);
-    l5_crate[1] = l5_make_rect(1020,590,70,70);
-    l5_crate[2] = l5_make_rect(1180,218,70,70);
-    l5_boulder_radius = 30*l5_u;
-    l5_boulder[0] = l5_make_point(1480,900);
-    l5_boulder[1] = l5_make_point(640,620);
-    l5_boulder[2] = l5_make_point(360,370);
-    l5_boulder[3] = l5_make_point(1000,372);
+    //crates and boulders: one obstacle at a time, well spread
+    l5_crate[0] = l5_make_rect(640,922,76,76);
+    l5_crate[1] = l5_make_rect(1340,752,76,76);
+    l5_crate[2] = l5_make_rect(1400,242,76,76);
+    l5_boulder_radius = 34*l5_u;
+    l5_boulder[0] = l5_make_point(1100,1012);
+    l5_boulder[1] = l5_make_point(1480,502);
+    l5_boulder[2] = l5_make_point(300,672);
+    l5_boulder[3] = l5_make_point(1300,118);
+
     for (int i=0; i<4; i++) l5_boulder_hit[i] = 0;
 
-    //signposts stand at the three turns, pointing the way
-    l5_sign[0] = l5_make_point(1760,950);
-    l5_sign[1] = l5_make_point(170,640);
-    l5_sign[2] = l5_make_point(1300,300);
+    //a signpost at every turn
+    l5_sign[0] = l5_make_point(1620,985);
+    l5_sign[1] = l5_make_point(480,815);
+    l5_sign[2] = l5_make_point(1620,645);
     l5_drift_offset = 0;
 
-    //ball and pot
-    l5_start_position = l5_make_point(150,940);
+    //ball and pot: the whole climb apart
+    l5_start_position = l5_make_point(140,985);
     l5_ball = l5_start_position;
     l5_last_shot_position = l5_start_position;
     l5_speed.x = 0;
     l5_speed.y = 0;
-    l5_pot = l5_make_point(1800,230);
+    l5_pot = l5_make_point(340,150);
     l5_stroke = 0;
     l5_game_state = 0;
     l5_aiming = 0;
@@ -947,8 +947,9 @@ void l5_draw_obstacles()
     {
         int frame = (int)(l5_snowball_travel*14)%4;
         Rectangle source = {frame*128,0,128,128};
-        Rectangle dest = {l5_snowball.x,l5_snowball.y,l5_snowball_radius*2,l5_snowball_radius*2};
-        Vector2 origin = {l5_snowball_radius,l5_snowball_radius};
+        float size = l5_snowball_radius*2.15;
+        Rectangle dest = {l5_snowball.x,l5_snowball.y,size,size};
+        Vector2 origin = {size/2,size/2};
         DrawTexturePro(l5_snowball_texture,source,dest,origin,l5_snowball_travel*220,WHITE);
     }
     if (l5_shatter_timer>0)
@@ -974,8 +975,8 @@ void l5_draw_obstacles()
             drop = l5_icicle_fall[i]*620*l5_u;
         }
         Rectangle source = {frame*128,0,128,128};
-        Rectangle dest = {l5_icicle[i].x,l5_icicle[i].y+drop,56*l5_u,56*l5_u};
-        Vector2 origin = {28*l5_u,28*l5_u};
+        Rectangle dest = {l5_icicle[i].x,l5_icicle[i].y+drop,64*l5_u,64*l5_u};
+        Vector2 origin = {32*l5_u,32*l5_u};
         DrawTexturePro(l5_icicle_texture,source,dest,origin,0,WHITE);
     }
 
@@ -996,8 +997,8 @@ void l5_draw_obstacles()
     //ice boulders
     for (int i=0; i<4; i++)
     {
-        float size = l5_boulder_radius*2.4;
-        if (l5_boulder_hit[i]>0) size = size + 10*l5_u*l5_boulder_hit[i]/0.2;
+        float size = l5_boulder_radius*2.3;
+        if (l5_boulder_hit[i]>0) size = size + 8*l5_u*l5_boulder_hit[i]/0.2;
         Rectangle source = {(i%3)*256,0,256,256};
         Rectangle dest = {l5_boulder[i].x,l5_boulder[i].y,size,size};
         Vector2 origin = {size/2,size/2};
@@ -1022,8 +1023,9 @@ void l5_draw_obstacles()
     {
         int frame = (int)(l5_animation_time*7+i)%4;
         Rectangle source = {frame*128,0,128,128};
-        Rectangle dest = {l5_ibex[i].x,l5_ibex[i].y,84*l5_u,84*l5_u};
-        Vector2 origin = {42*l5_u,42*l5_u};
+        float size = l5_ibex_radius*2.5;
+        Rectangle dest = {l5_ibex[i].x,l5_ibex[i].y,size,size};
+        Vector2 origin = {size/2,size/2};
         float facing = 90;
         if (l5_ibex_speed[i]<0) facing = -90;
         DrawTexturePro(l5_ibex_texture,source,dest,origin,facing,WHITE);
@@ -1033,8 +1035,10 @@ void l5_draw_obstacles()
     for (int i=0; i<5; i++)
     {
         Rectangle source = {(i%3)*384,0,384,384};
-        Rectangle dest = {l5_pine[i].x,l5_pine[i].y,110*l5_u,110*l5_u};
-        Vector2 origin = {55*l5_u,55*l5_u};
+        //the sprite fills about 0.9 of its cell, so this makes the picture match the circle
+        float size = l5_pine_radius*2.25;
+        Rectangle dest = {l5_pine[i].x,l5_pine[i].y,size,size};
+        Vector2 origin = {size/2,size/2};
         DrawTexturePro(l5_pine_texture,source,dest,origin,i*37,WHITE);
     }
 }

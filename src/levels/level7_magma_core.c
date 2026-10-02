@@ -7,7 +7,7 @@
 int l7_width = 1920;
 int l7_height = 1080;
 float l7_u = 1;
-int l7_stroke_base = 18;
+int l7_stroke_base = 26;
 int l7_stroke_limit = 18;
 #define l7_max_speed 650
 
@@ -157,34 +157,36 @@ void l7_reset_level()
     l7_radius_ball = 7*l7_u;
     l7_radius_pot = 11*l7_u;
 
-    //THE ROUTE IS A DESCENT, and it reads at a glance: along the top terrace to the
-    //right, down the right-hand bridge, back along the middle terrace, down the
-    //left-hand bridge, then right along the floor to the heart. The difficulty is
-    //timing the vents, the crust and the lava fall, not working out where to go.
-    l7_ledge[0] = l7_make_rect(60,150,1800,180);    //top terrace
-    l7_ledge[1] = l7_make_rect(1560,330,300,150);   //right landing
-    l7_ledge[2] = l7_make_rect(60,480,1800,180);    //middle terrace
-    l7_ledge[3] = l7_make_rect(60,660,320,150);     //left landing
-    l7_ledge[4] = l7_make_rect(60,810,1800,190);    //the floor, where the heart is
-    for (int i=5; i<10; i++) l7_ledge[i] = l7_make_rect(-400,-400,10,10);
+    //SIX TERRACES, descending, joined at alternating ends. Each terrace is one idea
+    //with room to breathe: crust, vents, the lava fall, geysers, crystals, the heart.
+    l7_ledge[0] = l7_make_rect(60,100,1640,120);     //1 the rim, where you come in
+    l7_ledge[1] = l7_make_rect(220,270,1640,120);    //2 the crust shelf
+    l7_ledge[2] = l7_make_rect(60,440,1640,120);     //3 the vent terrace
+    l7_ledge[3] = l7_make_rect(220,610,1640,120);    //4 the lava fall
+    l7_ledge[4] = l7_make_rect(60,780,1640,120);     //5 the geyser run
+    l7_ledge[5] = l7_make_rect(220,940,1640,110);    //6 the heart chamber
+    //the joins the bridges do not make: three rock ramps
+    l7_ledge[6] = l7_make_rect(220,270,170,290);     //2 -> 3, left
+    l7_ledge[7] = l7_make_rect(220,610,170,290);     //4 -> 5, left
+    l7_ledge[8] = l7_make_rect(1530,780,170,270);    //5 -> 6, right
+    l7_ledge[9] = l7_make_rect(-400,-400,10,10);
 
-    //the lava climbs the screen and stops just under the floor, so you can see it
-    //coming for you without the level becoming unwinnable
+    //the lava climbs and stops under the heart chamber, so the floor you came in on
+    //goes first and the level stays winnable
     l7_lava_line = 1080*l7_u;
-    l7_lava_rise = 2.0*l7_u;
+    l7_lava_rise = 1.6*l7_u;
 
-    //cooling crust: safe while grey, deadly while it glows. One per terrace, right on
-    //the line you want to take.
-    l7_crust[0] = l7_make_rect(620,170,150,140);
-    l7_crust[1] = l7_make_rect(980,500,150,140);
-    l7_crust[2] = l7_make_rect(760,830,150,140);
+    //terrace 2 is the crust: three slabs with long gaps between them
+    l7_crust[0] = l7_make_rect(480,280,150,100);
+    l7_crust[1] = l7_make_rect(900,280,150,100);
+    l7_crust[2] = l7_make_rect(1320,280,150,100);
     l7_crust_clock[0] = 0;
-    l7_crust_clock[1] = 2.2;
+    l7_crust_clock[1] = 2;
     l7_crust_clock[2] = 4;
 
-    //the two bridges down, both crumbling
-    for (int i=0; i<6; i++) l7_plank[0][i] = l7_make_rect(1596+i*46,330,46,160);
-    for (int i=0; i<7; i++) l7_plank[1][i] = l7_make_rect(96+i*41,660,41,160);
+    //two catwalks over the lake, each at the end of its terrace
+    for (int i=0; i<5; i++) l7_plank[0][i] = l7_make_rect(1546+i*34,200,34,100);  //1 -> 2, right
+    for (int i=0; i<5; i++) l7_plank[1][i] = l7_make_rect(1546+i*34,540,34,110);  //3 -> 4, right
     for (int b=0; b<2; b++)
     {
         for (int i=0; i<7; i++)
@@ -194,67 +196,69 @@ void l7_reset_level()
         }
     }
 
-    //vents: the holes are always deadly, and now and then they flood a circle
-    l7_vent_hole = 34*l7_u;
-    l7_vent_reach = 140*l7_u;
-    l7_vent[0] = l7_make_point(1080,240);
-    l7_vent[1] = l7_make_point(560,570);
-    l7_vent[2] = l7_make_point(1300,975);
+    //terrace 3 is the vents: three of them, far apart, with room to go round
+    l7_vent_hole = 30*l7_u;
+    l7_vent_reach = 120*l7_u;
+    l7_vent[0] = l7_make_point(520,455);
+    l7_vent[1] = l7_make_point(980,545);
+    l7_vent[2] = l7_make_point(1440,455);
     for (int i=0; i<3; i++)
     {
-        l7_vent_wait[i] = 7 + i*4.5;
+        l7_vent_wait[i] = 5 + i*3.5;
         l7_vent_stage[i] = 0;
         l7_vent_live[i] = 0;
     }
 
-    //geysers throw you along the terrace, which is how you cover the long legs fast
-    l7_geyser[0] = l7_make_point(340,240);
-    l7_geyser_kick[0] = l7_make_point(560,0);
-    l7_geyser[1] = l7_make_point(1520,570);
-    l7_geyser_kick[1] = l7_make_point(-560,0);
+    //terrace 5 is the geysers: they throw you along the run
+    l7_geyser[0] = l7_make_point(420,840);
+    l7_geyser_kick[0] = l7_make_point(540,0);
+    l7_geyser[1] = l7_make_point(1120,840);
+    l7_geyser_kick[1] = l7_make_point(540,0);
     l7_geyser_clock[0] = 0;
     l7_geyser_clock[1] = 1.6;
 
-    //rafts drift in the lava between the terraces: pure scenery, nothing to land on
-    l7_raft[0] = l7_make_rect(500,350,170,120);
+    //rafts drift in the lake between terraces: scenery with a purpose, they show you
+    //the lake is moving
+    l7_raft[0] = l7_make_rect(500,230,170,110);
     l7_raft_from[0] = 420*l7_u;
-    l7_raft_to[0] = 900*l7_u;
+    l7_raft_to[0] = 1000*l7_u;
     l7_raft_speed[0] = 90*l7_u;
-    l7_raft[1] = l7_make_rect(1100,690,170,120);
-    l7_raft_from[1] = 900*l7_u;
-    l7_raft_to[1] = 1400*l7_u;
+    l7_raft[1] = l7_make_rect(900,900,170,110);
+    l7_raft_from[1] = 700*l7_u;
+    l7_raft_to[1] = 1300*l7_u;
     l7_raft_speed[1] = -80*l7_u;
 
-    //the lava tube: a shortcut from the middle terrace down to the floor
-    l7_tube_in = l7_make_point(1760,560);
-    l7_tube_out = l7_make_point(1600,900);
-    l7_tube_facing = 180;
+    //the lava tube: it takes you from the end of terrace 4 down onto terrace 5, which
+    //is the one shortcut on the way down
+    l7_tube_in = l7_make_point(1700,670);
+    l7_tube_out = l7_make_point(300,840);
+    l7_tube_facing = 0;
     l7_tube_cooldown = 0;
 
-    //steam blows sideways across two spots
-    l7_steam_jet[0] = l7_make_rect(880,150,150,180);
-    l7_steam_push[0] = l7_make_point(0,420);
-    l7_steam_jet[1] = l7_make_rect(420,810,150,190);
+    //steam across terrace 4 and the heart chamber
+    l7_steam_jet[0] = l7_make_rect(900,610,140,120);
+    l7_steam_push[0] = l7_make_point(0,-420);
+    l7_steam_jet[1] = l7_make_rect(1120,940,140,110);
     l7_steam_push[1] = l7_make_point(420,0);
     l7_steam_clock[0] = 0;
-    l7_steam_clock[1] = 1.8;
+    l7_steam_clock[1] = 2;
 
-    //crystals: bumpers along the terraces
-    l7_crystal_radius = 30*l7_u;
-    l7_crystal[0] = l7_make_point(1420,190);
-    l7_crystal[1] = l7_make_point(260,570);
-    l7_crystal[2] = l7_make_point(1180,570);
-    l7_crystal[3] = l7_make_point(1040,900);
+    //crystals: one per terrace at most, as bumpers you can use
+    l7_crystal_radius = 34*l7_u;
+    l7_crystal[0] = l7_make_point(900,122);
+    l7_crystal[1] = l7_make_point(1300,632);
+    l7_crystal[2] = l7_make_point(760,802);
+    l7_crystal[3] = l7_make_point(700,958);
     for (int i=0; i<4; i++) l7_crystal_hit[i] = 0;
 
-    l7_shower_wait = 22;
+    l7_shower_wait = 24;
     l7_shower_state = 0;
     l7_shower_timer = 0;
     l7_shower_x = 0;
     l7_heart_open = 0;
 
-    //bubbles pop out in the lava, well away from the terraces
-    float bubble_spot[7][2] = {{300,400},{780,390},{1250,420},{520,720},{880,730},{1500,720},{1700,420}};
+    //bubbles pop in the lake, in the gaps between terraces
+    float bubble_spot[7][2] = {{320,240},{880,410},{1300,240},{560,580},{1480,750},{760,750},{1150,580}};
     for (int i=0; i<7; i++)
     {
         l7_bubble[i] = l7_make_point(bubble_spot[i][0],bubble_spot[i][1]);
@@ -262,47 +266,47 @@ void l7_reset_level()
         l7_bubble_wait[i] = 0.4 + i*0.55;
     }
 
-    //salamanders run the terraces
-    l7_salamander_from[0] = l7_make_point(200,300);
-    l7_salamander_to[0] = l7_make_point(700,300);
-    l7_salamander_speed[0] = 0.3;
-    l7_salamander_from[1] = l7_make_point(700,630);
-    l7_salamander_to[1] = l7_make_point(1300,630);
-    l7_salamander_speed[1] = 0.26;
-    l7_salamander_from[2] = l7_make_point(1200,970);
-    l7_salamander_to[2] = l7_make_point(1800,970);
-    l7_salamander_speed[2] = 0.33;
+    //salamanders run three of the terraces
+    l7_salamander_from[0] = l7_make_point(300,160);
+    l7_salamander_to[0] = l7_make_point(1100,160);
+    l7_salamander_speed[0] = 0.26;
+    l7_salamander_from[1] = l7_make_point(500,670);
+    l7_salamander_to[1] = l7_make_point(1200,670);
+    l7_salamander_speed[1] = 0.22;
+    l7_salamander_from[2] = l7_make_point(900,995);
+    l7_salamander_to[2] = l7_make_point(1600,995);
+    l7_salamander_speed[2] = 0.3;
     for (int i=0; i<3; i++)
     {
         l7_salamander_travel[i] = i*0.4;
         l7_salamander[i] = l7_salamander_from[i];
     }
 
-    //smoke drifts up off the hot spots
-    l7_smoke[0] = l7_make_point(420,400);
-    l7_smoke[1] = l7_make_point(1150,400);
-    l7_smoke[2] = l7_make_point(700,730);
-    l7_smoke[3] = l7_make_point(1560,730);
+    //smoke off the lake
+    l7_smoke[0] = l7_make_point(700,240);
+    l7_smoke[1] = l7_make_point(1500,410);
+    l7_smoke[2] = l7_make_point(400,750);
+    l7_smoke[3] = l7_make_point(1250,580);
     for (int i=0; i<4; i++) l7_smoke_stage[i] = i*0.9;
 
-    //pumice bobbing out in the lake
-    l7_pumice[0] = l7_make_point(980,390);
-    l7_pumice[1] = l7_make_point(260,730);
-    l7_pumice[2] = l7_make_point(1420,390);
-    l7_pumice[3] = l7_make_point(1700,730);
+    //pumice bobbing in the lake
+    l7_pumice[0] = l7_make_point(1100,240);
+    l7_pumice[1] = l7_make_point(300,410);
+    l7_pumice[2] = l7_make_point(1620,580);
+    l7_pumice[3] = l7_make_point(560,910);
     for (int i=0; i<4; i++) l7_pumice_bob[i] = i*1.3;
 
-    //the lava fall pours straight across the middle terrace: a curtain to time
-    l7_lavafall = l7_make_rect(740,480,70,180);
+    //the lava fall pours across terrace 4, on for 2.5 seconds, off for 2.5
+    l7_lavafall = l7_make_rect(600,610,110,120);
     l7_lavafall_clock = 0;
 
-    //ball and heart
-    l7_start_position = l7_make_point(150,240);
+    //ball and heart, a whole descent apart
+    l7_start_position = l7_make_point(140,160);
     l7_ball = l7_start_position;
     l7_last_shot_position = l7_start_position;
     l7_speed.x = 0;
     l7_speed.y = 0;
-    l7_pot = l7_make_point(1740,900);
+    l7_pot = l7_make_point(340,995);
     l7_stroke = 0;
     l7_game_state = 0;
     l7_aiming = 0;
@@ -838,11 +842,20 @@ void l7_draw_ground()
             float shake = 0;
             if (l7_plank_state[b][i]==1) shake = sin(l7_animation_time*70)*3*l7_u;
             Rectangle shown = {r.x+shake,r.y,r.width-4*l7_u,r.height};
-            DrawRectangleRec(shown,l7_rock);
+            //an iron grating: plate, rivets and a hot underside, so it reads as a catwalk
+            DrawRectangleRec(shown,GetColor(0x4A4650FF));
             DrawRectangleLinesEx(shown,2*l7_u,l7_rock_dark);
+            for (int k=0; k<3; k++)
+            {
+                DrawRectangle(shown.x+4*l7_u,shown.y+8*l7_u+k*(shown.height-16*l7_u)/3,shown.width-8*l7_u,4*l7_u,Fade(l7_rock_dark,0.8));
+            }
+            DrawCircle(shown.x+6*l7_u,shown.y+6*l7_u,2*l7_u,Fade(l7_rock_light,0.9));
+            DrawCircle(shown.x+shown.width-6*l7_u,shown.y+6*l7_u,2*l7_u,Fade(l7_rock_light,0.9));
+            DrawRectangleGradientV(shown.x,shown.y+shown.height-7*l7_u,shown.width,7*l7_u,BLANK,Fade(l7_lava,0.55));
             if (l7_plank_state[b][i]==1)
             {
-                DrawLineEx((Vector2){shown.x+shown.width/2,shown.y},(Vector2){shown.x+shown.width/3,shown.y+shown.height},3*l7_u,Fade(l7_lava,0.9));
+                DrawLineEx((Vector2){shown.x+shown.width/2,shown.y},(Vector2){shown.x+shown.width/3,shown.y+shown.height},3*l7_u,Fade(l7_lava_hot,0.95));
+                DrawRectangleLinesEx(shown,3*l7_u,Fade(l7_ember,0.8));
             }
         }
     }
@@ -853,7 +866,7 @@ void l7_draw_ground()
         int frame = 0;
         if (l7_crust_clock[i]>=4) frame = 1;
         else if (l7_crust_clock[i]>=3.4 && fmod(l7_animation_time*10,2)<1) frame = 1;
-        Rectangle source = {frame*256,0,256,256};
+        Rectangle source = {frame*512,0,512,512};
         Vector2 no_origin = {0,0};
         DrawTexturePro(l7_crust_texture,source,l7_crust[i],no_origin,0,WHITE);
     }
@@ -861,7 +874,7 @@ void l7_draw_ground()
     //rafts
     for (int i=0; i<2; i++)
     {
-        Rectangle source = {0,0,320,256};
+        Rectangle source = {0,0,640,512};
         Vector2 no_origin = {0,0};
         DrawTexturePro(l7_raft_texture,source,l7_raft[i],no_origin,0,WHITE);
     }
@@ -890,7 +903,7 @@ void l7_draw_ground()
 
     //the lava fall: a curtain pouring across the middle terrace, with a glow either side
     int fall_frame = (int)(l7_animation_time*10)%4;
-    Rectangle fall_source = {fall_frame*256,0,256,512};
+    Rectangle fall_source = {(fall_frame%2)*512,0,512,512};
     Vector2 no_origin_fall = {0,0};
     if (l7_lavafall_clock<2.5)
     {
@@ -910,48 +923,102 @@ void l7_draw_ground()
 void l7_draw_obstacles()
 {
 
-    //steam jets
+    //steam jets: a vent grate in the rock, and the blast when it blows
     for (int i=0; i<2; i++)
     {
+        Rectangle r = l7_steam_jet[i];
+        //the grate itself, so you can see where it is even when it is quiet
+        DrawRectangleRec(r,Fade(l7_rock_dark,0.9));
+        DrawRectangleLinesEx(r,3*l7_u,Fade(l7_rock_light,0.8));
+        int bars = r.width/(18*l7_u);
+        for (int k=0; k<bars; k++)
+        {
+            DrawRectangle(r.x+6*l7_u+k*18*l7_u,r.y+6*l7_u,8*l7_u,r.height-12*l7_u,Fade(l7_rock,0.95));
+        }
         if (l7_steam_clock[i]<1.4)
         {
             float strength = 1 - l7_steam_clock[i]/1.4;
-            Rectangle r = l7_steam_jet[i];
-            DrawRectangleRec(r,Fade(l7_steam,0.25*strength));
-            for (int k=0; k<7; k++)
+            Vector2 way = Vector2Normalize(l7_steam_push[i]);
+            Vector2 middle = {r.x+r.width/2,r.y+r.height/2};
+            for (int k=0; k<9; k++)
             {
-                float t = fmod(l7_animation_time*1.6 + k*0.14,1.0);
-                Vector2 puff = {r.x+r.width/2 + l7_steam_push[i].x*t*0.0016*l7_u*120,r.y+r.height/2 + l7_steam_push[i].y*t*0.0016*l7_u*120};
-                DrawCircleV(puff,(10+k*3)*l7_u,Fade(l7_steam,0.3*strength*(1-t)));
+                float t = fmod(l7_animation_time*1.8 + k*0.11,1.0);
+                Vector2 puff = Vector2Add(middle,Vector2Scale(way,t*230*l7_u));
+                float side = sin(t*6 + k)*14*l7_u;
+                puff.x = puff.x + way.y*side;
+                puff.y = puff.y - way.x*side;
+                DrawCircleV(puff,(14+t*30)*l7_u,Fade(l7_steam,0.35*strength*(1-t)));
             }
         }
-        DrawRectangleLinesEx(l7_steam_jet[i],2*l7_u,Fade(l7_steam,0.35));
+        else if (l7_steam_clock[i]>3.4 && fmod(l7_animation_time*8,2)<1.2)
+        {
+            //about to blow
+            DrawRectangleLinesEx(r,4*l7_u,Fade(l7_steam,0.8));
+        }
     }
 
-    //the lava tube, in and out
-    DrawCircleV(l7_tube_in,36*l7_u,l7_rock_dark);
-    DrawRing(l7_tube_in,30*l7_u,36*l7_u,l7_animation_time*90,l7_animation_time*90+280,24,l7_lava);
-    DrawCircleV(l7_tube_out,30*l7_u,l7_rock_dark);
+    //the lava tube: a pipe mouth in the rock at one end, and where it spits you out at
+    //the other. The arrow says which way you leave.
+    DrawCircleV(l7_tube_in,44*l7_u,l7_rock_dark);
+    DrawRing(l7_tube_in,36*l7_u,44*l7_u,0,360,28,l7_rock_light);
+    DrawCircleV(l7_tube_in,34*l7_u,BLACK);
+    DrawRing(l7_tube_in,24*l7_u,32*l7_u,l7_animation_time*110,l7_animation_time*110+250,24,Fade(l7_lava,0.9));
+    for (int k=0; k<5; k++)
+    {
+        float a = l7_animation_time*2.6 + k*1.25;
+        float r = 10*l7_u + fmod(l7_animation_time*40*l7_u + k*18*l7_u,24*l7_u);
+        DrawCircleV((Vector2){l7_tube_in.x+cos(a)*r,l7_tube_in.y+sin(a)*r},3*l7_u,Fade(l7_ember,0.8));
+    }
+
     float facing = l7_tube_facing*DEG2RAD;
-    Vector2 nose = {l7_tube_out.x+cos(facing)*52*l7_u,l7_tube_out.y+sin(facing)*52*l7_u};
-    DrawRing(l7_tube_out,26*l7_u,32*l7_u,-l7_animation_time*70,-l7_animation_time*70+240,24,Fade(l7_ember,0.8));
-    DrawPoly(nose,3,14*l7_u,l7_tube_facing,Fade(l7_ember,0.85));
+    Vector2 nose = {l7_tube_out.x+cos(facing)*60*l7_u,l7_tube_out.y+sin(facing)*60*l7_u};
+    DrawCircleV(l7_tube_out,40*l7_u,l7_rock_dark);
+    DrawRing(l7_tube_out,32*l7_u,40*l7_u,0,360,28,l7_rock_light);
+    DrawCircleV(l7_tube_out,30*l7_u,Fade(l7_lava,0.85));
+    DrawCircleV(l7_tube_out,18*l7_u,Fade(l7_lava_hot,0.9));
+    DrawPoly(nose,3,18*l7_u,l7_tube_facing,Fade(l7_ember,0.9));
+    DrawPolyLines(nose,3,18*l7_u,l7_tube_facing,l7_lava_hot);
 
     //vents: dormant, building, erupting - plus the circle of lava an eruption throws out
     for (int i=0; i<3; i++)
     {
+        //the flood an eruption throws out: layered, with a crust edge and thrown blobs,
+        //so it reads as spreading molten rock rather than a coloured circle
         float flood = l7_vent_flood(i);
         if (flood>0)
         {
-            DrawCircleV(l7_vent[i],flood,Fade(l7_lava,0.75));
-            DrawCircleLines(l7_vent[i].x,l7_vent[i].y,flood,l7_lava_hot);
+            float heat = flood/l7_vent_reach;
+            DrawCircleGradient(l7_vent[i],flood*1.35,Fade(l7_lava,0.30*heat),BLANK);
+            DrawCircleV(l7_vent[i],flood,Fade(GetColor(0xD1541FFF),0.92));
+            DrawCircleV(l7_vent[i],flood*0.74,Fade(l7_lava,0.95));
+            DrawCircleV(l7_vent[i],flood*0.42,Fade(l7_lava_hot,0.95));
+            //a broken crust edge all the way round
+            for (int k=0; k<18; k++)
+            {
+                float a = k*0.349 + l7_animation_time*0.6;
+                float wobble = flood*(0.94 + 0.08*sin(k*2.1 + l7_animation_time*3));
+                Vector2 edge = {l7_vent[i].x + cos(a)*wobble,l7_vent[i].y + sin(a)*wobble};
+                DrawCircleV(edge,flood*0.13,Fade(GetColor(0x8A2E12FF),0.9));
+                DrawCircleV(edge,flood*0.07,Fade(l7_ember,0.8));
+            }
+            //and blobs thrown clear of it
+            for (int k=0; k<7; k++)
+            {
+                float a = k*0.9 + i*1.3;
+                float out = flood*(1.15 + 0.25*sin(l7_animation_time*2 + k));
+                Vector2 blob = {l7_vent[i].x + cos(a)*out,l7_vent[i].y + sin(a)*out};
+                DrawCircleV(blob,(7-k%3)*l7_u,Fade(l7_ember,0.75*heat));
+            }
         }
         int frame = 0;
         if (l7_vent_live[i]==1 && l7_vent_stage[i]<1.5) frame = 1;
         else if (l7_vent_live[i]==1) frame = 2;
-        Rectangle source = {frame*256,0,256,256};
-        Rectangle dest = {l7_vent[i].x,l7_vent[i].y,120*l7_u,120*l7_u};
-        Vector2 origin = {60*l7_u,60*l7_u};
+        Rectangle source = {frame*512,0,512,512};
+        //the sprite's hole is 300 of its 512 px, so this size makes the drawn hole match
+        //the hole that actually swallows the ball
+        float size = l7_vent_hole*512/300;
+        Rectangle dest = {l7_vent[i].x,l7_vent[i].y,size,size};
+        Vector2 origin = {size/2,size/2};
         DrawTexturePro(l7_vent_texture,source,dest,origin,0,WHITE);
         if (l7_vent_live[i]==1 && l7_vent_stage[i]<1.5 && fmod(l7_animation_time*8,2)<1.2)
         {
@@ -968,7 +1035,7 @@ void l7_draw_obstacles()
         else if (l7_geyser_clock[i]<0.8) frame = 2;
         if (frame>=0)
         {
-            Rectangle source = {frame*128,0,128,128};
+            Rectangle source = {frame*256,0,256,256};
             Rectangle dest = {l7_geyser[i].x,l7_geyser[i].y,150*l7_u,150*l7_u};
             Vector2 origin = {75*l7_u,75*l7_u};
             DrawTexturePro(l7_geyser_texture,source,dest,origin,0,WHITE);
@@ -1011,9 +1078,9 @@ void l7_draw_obstacles()
     for (int i=0; i<4; i++)
     {
         int frame = i%3;
-        Rectangle source = {frame*192,0,192,192};
-        float size = 86*l7_u;
-        if (l7_crystal_hit[i]>0) size = size + 10*l7_u*l7_crystal_hit[i]/0.2;
+        Rectangle source = {frame*384,0,384,384};
+        float size = l7_crystal_radius*2.3;
+        if (l7_crystal_hit[i]>0) size = size + 8*l7_u*l7_crystal_hit[i]/0.2;
         Rectangle dest = {l7_crystal[i].x,l7_crystal[i].y,size,size};
         Vector2 origin = {size/2,size/2};
         DrawTexturePro(l7_crystal_texture,source,dest,origin,i*29,WHITE);

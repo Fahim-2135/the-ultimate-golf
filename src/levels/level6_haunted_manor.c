@@ -183,169 +183,174 @@ void l6_reset_level()
     l6_radius_ball = 7*l6_u;
     l6_radius_pot = 11*l6_u;
 
-    //the outer walls of the house
+    //SIX ROOMS in two rows, with the doorways deliberately offset so the house is a
+    //long circuit rather than one big hall:
+    //   hall -> library -> conservatory -> up the east stair -> gallery -> study -> crypt
+    //The outer walls
     l6_wall_rect[0] = l6_make_rect(40,90,1840,30);        //top
     l6_wall_rect[1] = l6_make_rect(40,1000,1840,30);      //bottom
     l6_wall_rect[2] = l6_make_rect(40,90,30,940);         //left
     l6_wall_rect[3] = l6_make_rect(1850,90,30,940);       //right
 
-    //the hall, bottom left, with a doorway up into the gallery
-    l6_wall_rect[4] = l6_make_rect(420,520,30,510);       //hall right wall
-    l6_wall_rect[5] = l6_make_rect(70,520,230,30);        //hall ceiling: the doorway is the gap at x 300-420
+    //the wall between the two rows, with one way up at the east end
+    l6_wall_rect[4] = l6_make_rect(70,540,1480,30);
+    l6_wall_rect[5] = l6_make_rect(1700,540,150,30);
 
-    //the gallery, top left
-    l6_wall_rect[6] = l6_make_rect(560,120,30,280);      //stops short: the gap at y 400-520 joins the two halves
-    l6_wall_rect[7] = l6_make_rect(70,330,300,30);        //a shelf of a wall inside it
+    //the bottom row, split into three rooms. The doorways are at opposite ends.
+    l6_wall_rect[6] = l6_make_rect(660,570,30,290);       //hall | library, doorway low
+    l6_wall_rect[7] = l6_make_rect(1250,730,30,300);      //library | conservatory, doorway high
 
-    //the library, middle
-    l6_wall_rect[8] = l6_make_rect(560,640,30,390);
-    l6_wall_rect[9] = l6_make_rect(590,640,540,30);
-    l6_wall_rect[10] = l6_make_rect(1120,300,30,370);
-    l6_wall_rect[11] = l6_make_rect(900,300,250,30);
+    //the top row, split into three. Again the doorways alternate.
+    l6_wall_rect[8] = l6_make_rect(660,270,30,270);       //study | gallery, doorway high
+    l6_wall_rect[9] = l6_make_rect(1250,120,30,290);      //gallery | east stair, doorway low
 
-    //the crypt, right, behind its door
-    l6_wall_rect[12] = l6_make_rect(1440,120,30,360);
-    l6_wall_rect[13] = l6_make_rect(1440,700,30,330);
-    l6_wall_rect[14] = l6_make_rect(1470,700,290,30);
-    l6_wall_rect[15] = l6_make_rect(1470,450,290,30);
+    //a few short walls inside the rooms, to make the shots interesting
+    l6_wall_rect[10] = l6_make_rect(260,760,250,30);
+    l6_wall_rect[11] = l6_make_rect(900,640,230,30);
+    l6_wall_rect[12] = l6_make_rect(1480,820,240,30);
+    l6_wall_rect[13] = l6_make_rect(880,330,220,30);
+    //the crypt is walled off in the far corner: a ceiling over it and a stub of wall
+    //under the door, so the door has somewhere to slide down into
+    l6_wall_rect[14] = l6_make_rect(70,280,360,30);
+    l6_wall_rect[15] = l6_make_rect(400,430,30,110);
 
-    //walls that come and go on the chime
-    l6_phase_wall[0] = l6_make_rect(590,370,540,30);
-    l6_phase_wall[1] = l6_make_rect(1150,760,290,30);
-    l6_phase_wall[2] = l6_make_rect(760,760,30,240);
+    //walls that come and go on the chime, one per row
+    l6_phase_wall[0] = l6_make_rect(960,790,30,210);
+    l6_phase_wall[1] = l6_make_rect(1560,120,30,220);
+    l6_phase_wall[2] = l6_make_rect(480,120,30,160);
     l6_phase_on = 1;
     l6_clock_timer = 0;
     l6_chime_flash = 0;
 
-    //candles, each one a light you can switch on by rolling over it
-    l6_candle_radius = 16*l6_u;
-    l6_candle[0] = l6_make_point(250,860);
-    l6_candle[1] = l6_make_point(330,640);
-    l6_candle[2] = l6_make_point(700,250);
-    l6_candle[3] = l6_make_point(980,520);
-    l6_candle[4] = l6_make_point(760,900);
-    l6_candle[5] = l6_make_point(1300,560);
-    l6_candle[6] = l6_make_point(1640,850);
+    //candles: one or two per room, so every room can be lit as you pass through it
+    l6_candle_radius = 14*l6_u;
+    l6_candle[0] = l6_make_point(300,900);
+    l6_candle[1] = l6_make_point(560,660);
+    l6_candle[2] = l6_make_point(900,900);
+    l6_candle[3] = l6_make_point(1150,620);
+    l6_candle[4] = l6_make_point(1620,700);
+    l6_candle[5] = l6_make_point(1000,200);
+    l6_candle[6] = l6_make_point(540,470);
     for (int i=0; i<7; i++) l6_candle_lit[i] = 0;
 
-    //the lamps that flash on their own
-    l6_lamp[0] = l6_make_point(470,220);
-    l6_lamp[1] = l6_make_point(1230,180);
-    l6_lamp[2] = l6_make_point(880,980);
-    l6_lamp[3] = l6_make_point(1600,330);
+    //the lamps that flare on their own, spread over the whole house
+    l6_lamp[0] = l6_make_point(430,620);
+    l6_lamp[1] = l6_make_point(1150,960);
+    l6_lamp[2] = l6_make_point(1750,330);
+    l6_lamp[3] = l6_make_point(780,170);
     for (int i=0; i<4; i++)
     {
         l6_lamp_wait[i] = 2 + i*2.6;
         l6_lamp_on[i] = 0;
     }
 
-    //the shortcut: step on it and you come out deep in the library
-    l6_secret = l6_make_rect(300,180,110,110);
-    l6_secret_exit = l6_make_point(1230,900);
+    //the hidden way down: in the conservatory, it drops you into the study
+    l6_secret = l6_make_rect(1700,930,90,90);
+    l6_secret_exit = l6_make_point(980,470);
     l6_secret_glow = 0;
 
-    //trapdoors on their own clocks
-    l6_trapdoor[0] = l6_make_rect(640,420,130,130);
-    l6_trapdoor[1] = l6_make_rect(1230,620,130,130);
+    //trapdoors, one in each row
+    l6_trapdoor[0] = l6_make_rect(820,760,110,110);
+    l6_trapdoor[1] = l6_make_rect(1380,180,110,110);
     l6_trapdoor_clock[0] = 0;
     l6_trapdoor_clock[1] = 3;
 
-    //ghosts
-    l6_ghost_radius = 30*l6_u;
-    l6_ghost_from[0] = l6_make_point(180,720);
-    l6_ghost_to[0] = l6_make_point(380,900);
-    l6_ghost_speed[0] = 0.22;
-    l6_ghost_from[1] = l6_make_point(700,180);
-    l6_ghost_to[1] = l6_make_point(1050,230);
-    l6_ghost_speed[1] = 0.3;
-    l6_ghost_from[2] = l6_make_point(1250,420);
-    l6_ghost_to[2] = l6_make_point(1250,880);
-    l6_ghost_speed[2] = 0.26;
+    //ghosts drift the long corridors
+    l6_ghost_radius = 24*l6_u;
+    l6_ghost_from[0] = l6_make_point(180,640);
+    l6_ghost_to[0] = l6_make_point(560,960);
+    l6_ghost_speed[0] = 0.2;
+    l6_ghost_from[1] = l6_make_point(1340,620);
+    l6_ghost_to[1] = l6_make_point(1760,900);
+    l6_ghost_speed[1] = 0.26;
+    l6_ghost_from[2] = l6_make_point(760,200);
+    l6_ghost_to[2] = l6_make_point(1150,440);
+    l6_ghost_speed[2] = 0.23;
     for (int i=0; i<3; i++) l6_ghost_travel[i] = i*0.3;
 
-    //bats
-    l6_bat[0] = l6_make_rect(620,300,40,26);
-    l6_bat_left[0] = 600*l6_u;
-    l6_bat_right[0] = 1090*l6_u;
-    l6_bat_speed[0] = 180*l6_u;
-    l6_bat[1] = l6_make_rect(120,430,40,26);
-    l6_bat_left[1] = 100*l6_u;
-    l6_bat_right[1] = 500*l6_u;
+    //bats cross three of the rooms
+    l6_bat[0] = l6_make_rect(300,700,34,22);
+    l6_bat_left[0] = 120*l6_u;
+    l6_bat_right[0] = 600*l6_u;
+    l6_bat_speed[0] = 170*l6_u;
+    l6_bat[1] = l6_make_rect(1400,960,34,22);
+    l6_bat_left[1] = 1320*l6_u;
+    l6_bat_right[1] = 1800*l6_u;
     l6_bat_speed[1] = -150*l6_u;
-    l6_bat[2] = l6_make_rect(1500,600,40,26);
-    l6_bat_left[2] = 1490*l6_u;
-    l6_bat_right[2] = 1800*l6_u;
+    l6_bat[2] = l6_make_rect(800,440,34,22);
+    l6_bat_left[2] = 720*l6_u;
+    l6_bat_right[2] = 1200*l6_u;
     l6_bat_speed[2] = 160*l6_u;
 
-    //cobwebs
-    l6_cobweb[0] = l6_make_rect(90,140,200,170);
-    l6_cobweb[1] = l6_make_rect(880,700,190,160);
-    l6_cobweb[2] = l6_make_rect(1480,140,200,170);
+    //cobwebs in three corners
+    l6_cobweb[0] = l6_make_rect(80,580,150,130);
+    l6_cobweb[1] = l6_make_rect(1300,580,150,130);
+    l6_cobweb[2] = l6_make_rect(80,130,150,130);
 
-    //the chandelier over the library
-    l6_chandelier = l6_make_point(860,480);
+    //the chandelier hangs over the library
+    l6_chandelier = l6_make_point(1000,860);
     l6_chandelier_state = 0;
     l6_chandelier_fall = 0;
 
-    //the mirrors
-    l6_mirror[0] = l6_make_point(180,200);
-    l6_mirror_facing[0] = 0;
-    l6_mirror[1] = l6_make_point(1250,170);
-    l6_mirror_facing[1] = 90;
+    //the mirrors: gallery to hall, the long way round in one hop
+    l6_mirror[0] = l6_make_point(1700,180);
+    l6_mirror_facing[0] = 90;
+    l6_mirror[1] = l6_make_point(220,190);
+    l6_mirror_facing[1] = 0;
     l6_mirror_cooldown = 0;
 
-    //the plates and the crypt door
-    l6_plate_radius = 34*l6_u;
-    l6_plate[0] = l6_make_point(1000,880);
-    l6_plate[1] = l6_make_point(1380,230);
+    //the plates that open the crypt, one in each row and far apart
+    l6_plate_radius = 30*l6_u;
+    l6_plate[0] = l6_make_point(1620,440);
+    l6_plate[1] = l6_make_point(760,960);
     l6_plate_down[0] = 0;
     l6_plate_down[1] = 0;
-    l6_crypt_door = l6_make_rect(1440,480,30,220);
+    l6_crypt_door = l6_make_rect(400,310,30,120);
     l6_crypt_open = 0;
 
-    //wisps drifting the corridors
-    l6_wisp_from[0] = l6_make_point(140,760);
-    l6_wisp_to[0] = l6_make_point(390,930);
-    l6_wisp_speed[0] = 0.17;
-    l6_wisp_from[1] = l6_make_point(640,250);
-    l6_wisp_to[1] = l6_make_point(1060,200);
-    l6_wisp_speed[1] = 0.21;
-    l6_wisp_from[2] = l6_make_point(900,780);
-    l6_wisp_to[2] = l6_make_point(1340,820);
-    l6_wisp_speed[2] = 0.14;
+    //wisps drifting the two long rows
+    l6_wisp_from[0] = l6_make_point(360,960);
+    l6_wisp_to[0] = l6_make_point(1150,700);
+    l6_wisp_speed[0] = 0.13;
+    l6_wisp_from[1] = l6_make_point(1400,640);
+    l6_wisp_to[1] = l6_make_point(1780,980);
+    l6_wisp_speed[1] = 0.19;
+    l6_wisp_from[2] = l6_make_point(700,180);
+    l6_wisp_to[2] = l6_make_point(1200,470);
+    l6_wisp_speed[2] = 0.16;
     for (int i=0; i<3; i++)
     {
         l6_wisp_travel[i] = i*0.4;
         l6_wisp[i] = l6_wisp_from[i];
     }
 
-    //the swinging lantern over the middle corridor
-    l6_lantern_anchor = l6_make_point(760,560);
+    //the swinging lantern hangs in the middle of the library
+    l6_lantern_anchor = l6_make_point(960,700);
     l6_lantern = l6_lantern_anchor;
     l6_lantern_swing = 0;
 
-    //the broken sconce, high on the gallery wall
-    l6_sconce = l6_make_point(470,150);
+    //the broken sconce, high in the gallery
+    l6_sconce = l6_make_point(1480,140);
     l6_spark_wait = 3;
     l6_spark_stage = 0;
 
-    //the fireplace in the hall
-    l6_fire = l6_make_point(130,640);
+    //the fire in the hall
+    l6_fire = l6_make_point(140,700);
     l6_fire_pulse = 0;
 
     //the storm outside
     l6_storm_wait = 7;
     l6_storm_flash = 0;
 
-    //rats
+    //rats along the skirting
     l6_rat_from[0] = l6_make_point(120,980);
-    l6_rat_to[0] = l6_make_point(400,960);
+    l6_rat_to[0] = l6_make_point(560,980);
     l6_rat_speed[0] = 0.33;
-    l6_rat_from[1] = l6_make_point(700,620);
-    l6_rat_to[1] = l6_make_point(1100,600);
+    l6_rat_from[1] = l6_make_point(760,600);
+    l6_rat_to[1] = l6_make_point(1200,600);
     l6_rat_speed[1] = 0.28;
-    l6_rat_from[2] = l6_make_point(1500,960);
-    l6_rat_to[2] = l6_make_point(1800,940);
+    l6_rat_from[2] = l6_make_point(1400,140);
+    l6_rat_to[2] = l6_make_point(1800,140);
     l6_rat_speed[2] = 0.4;
     for (int i=0; i<3; i++)
     {
@@ -353,21 +358,21 @@ void l6_reset_level()
         l6_rat[i] = l6_rat_from[i];
     }
 
-    //portraits watching, windows with curtains, and the clock itself
-    l6_portrait[0] = l6_make_point(110,230);
-    l6_portrait[1] = l6_make_point(820,140);
-    l6_portrait[2] = l6_make_point(1700,300);
-    l6_window[0] = l6_make_point(300,130);
-    l6_window[1] = l6_make_point(1250,140);
-    l6_clock_at = l6_make_point(500,760);
+    //portraits watch from three rooms, windows in two
+    l6_portrait[0] = l6_make_point(430,580);
+    l6_portrait[1] = l6_make_point(1480,620);
+    l6_portrait[2] = l6_make_point(1120,150);
+    l6_window[0] = l6_make_point(900,130);
+    l6_window[1] = l6_make_point(1700,560);
+    l6_clock_at = l6_make_point(620,180);
 
-    //ball and pot
+    //ball and pot: the hall at one end, the crypt at the other
     l6_start_position = l6_make_point(150,940);
     l6_ball = l6_start_position;
     l6_last_shot_position = l6_start_position;
     l6_speed.x = 0;
     l6_speed.y = 0;
-    l6_pot = l6_make_point(1680,580);
+    l6_pot = l6_make_point(200,470);
     l6_stroke = 0;
     l6_game_state = 0;
     l6_aiming = 0;
@@ -811,7 +816,7 @@ void l6_update_ball(float dt)
         Vector2 bat_speed = {l6_bat_speed[i],0};
         l6_bounce_off_rectangle(l6_bat[i],bat_speed);
     }
-    if (l6_chandelier_state==2) l6_bounce_off_circle(l6_chandelier,56*l6_u,1);
+    if (l6_chandelier_state==2) l6_bounce_off_circle(l6_chandelier,34*l6_u,1);
 
     //in the hole
     if ((l6_ball.x>l6_pot.x-3*l6_radius_pot/4) && (l6_ball.x<l6_pot.x+3*l6_radius_pot/4) && (l6_ball.y>l6_pot.y-3*l6_radius_pot/4) && (l6_ball.y<l6_pot.y+3*l6_radius_pot/4))
@@ -832,14 +837,14 @@ void l6_draw_floor()
     DrawTexturePro(l6_floor_texture,source,dest,no_origin,0,WHITE);
 
     //a long rug down the hall, so the room reads even in the dark
-    DrawRectangle(90*l6_u,560*l6_u,310*l6_u,440*l6_u,Fade(l6_rug,0.55));
-    DrawRectangleLinesEx(l6_make_rect(90,560,310,440),3*l6_u,Fade(l6_gold,0.35));
+    DrawRectangle(90*l6_u,590*l6_u,540*l6_u,390*l6_u,Fade(l6_rug,0.5));
+    DrawRectangleLinesEx(l6_make_rect(90,590,540,390),3*l6_u,Fade(l6_gold,0.3));
 
     //cobwebs in the corners
     for (int i=0; i<3; i++)
     {
-        Rectangle web_source = {0,0,256,256};
-        if (i==1) web_source.width = -256;
+        Rectangle web_source = {0,0,512,512};
+        if (i==1) web_source.width = -512;
         DrawTexturePro(l6_cobweb_texture,web_source,l6_cobweb[i],no_origin,0,Fade(WHITE,0.75));
     }
 }
@@ -847,12 +852,34 @@ void l6_draw_floor()
 
 void l6_draw_walls()
 {
+    //the walls are panelled, and they throw a shadow onto the floor, so the rooms
+    //read as rooms instead of as marks on the boards
     for (int i=0; i<l6_wall_count; i++)
     {
         Rectangle r = l6_wall_rect[i];
-        DrawRectangleRec(r,l6_wall);
-        DrawRectangle(r.x,r.y,r.width,4*l6_u,l6_wall_light);
-        DrawRectangleLinesEx(r,2*l6_u,l6_wall_dark);
+        DrawRectangle(r.x+6*l6_u,r.y+8*l6_u,r.width,r.height,Fade(BLACK,0.45));
+        DrawRectangleRec(r,l6_wall_dark);
+        DrawRectangle(r.x+3*l6_u,r.y+3*l6_u,r.width-6*l6_u,r.height-6*l6_u,l6_wall);
+        DrawRectangle(r.x,r.y,r.width,5*l6_u,l6_wall_light);
+
+        //panel seams every 90 units along the long side
+        if (r.width>r.height)
+        {
+            for (float x=r.x+45*l6_u; x<r.x+r.width-20*l6_u; x=x+90*l6_u)
+            {
+                DrawRectangle(x,r.y+6*l6_u,2*l6_u,r.height-12*l6_u,Fade(BLACK,0.35));
+                DrawRectangle(x+2*l6_u,r.y+6*l6_u,1*l6_u,r.height-12*l6_u,Fade(l6_wall_light,0.6));
+            }
+        }
+        else
+        {
+            for (float y=r.y+45*l6_u; y<r.y+r.height-20*l6_u; y=y+90*l6_u)
+            {
+                DrawRectangle(r.x+6*l6_u,y,r.width-12*l6_u,2*l6_u,Fade(BLACK,0.35));
+                DrawRectangle(r.x+6*l6_u,y+2*l6_u,r.width-12*l6_u,1*l6_u,Fade(l6_wall_light,0.6));
+            }
+        }
+        DrawRectangleLinesEx(r,2*l6_u,GetColor(0x16100CFF));
     }
 
     //the phasing walls: solid, or just an outline where they will be
@@ -929,8 +956,8 @@ void l6_draw_obstacles()
         int frame = 0;
         if (l6_candle_lit[i]==1) frame = 1 + (int)(l6_animation_time*9)%3;
         Rectangle source = {frame*128,0,128,128};
-        Rectangle dest = {l6_candle[i].x,l6_candle[i].y,56*l6_u,56*l6_u};
-        Vector2 origin = {28*l6_u,28*l6_u};
+        Rectangle dest = {l6_candle[i].x,l6_candle[i].y,42*l6_u,42*l6_u};
+        Vector2 origin = {21*l6_u,21*l6_u};
         DrawTexturePro(l6_candle_texture,source,dest,origin,0,WHITE);
     }
 
@@ -946,8 +973,8 @@ void l6_draw_obstacles()
     for (int i=0; i<2; i++)
     {
         Rectangle source = {0,0,256,128};
-        Rectangle dest = {l6_mirror[i].x,l6_mirror[i].y,110*l6_u,56*l6_u};
-        Vector2 origin = {55*l6_u,28*l6_u};
+        Rectangle dest = {l6_mirror[i].x,l6_mirror[i].y,84*l6_u,42*l6_u};
+        Vector2 origin = {42*l6_u,21*l6_u};
         DrawTexturePro(l6_mirror_texture,source,dest,origin,l6_mirror_facing[i],WHITE);
         float shimmer = 0.3+0.2*sin(l6_animation_time*3+i);
         DrawCircleV(l6_mirror[i],20*l6_u,Fade(l6_ghost_blue,shimmer));
@@ -958,8 +985,8 @@ void l6_draw_obstacles()
     {
         int frame = (int)(l6_animation_time*12+i)%4;
         Rectangle source = {frame*128,0,128,128};
-        Rectangle dest = {l6_bat[i].x+l6_bat[i].width/2,l6_bat[i].y+l6_bat[i].height/2,60*l6_u,60*l6_u};
-        Vector2 origin = {30*l6_u,30*l6_u};
+        Rectangle dest = {l6_bat[i].x+l6_bat[i].width/2,l6_bat[i].y+l6_bat[i].height/2,46*l6_u,46*l6_u};
+        Vector2 origin = {23*l6_u,23*l6_u};
         float facing = 0;
         if (l6_bat_speed[i]<0) facing = 180;
         DrawTexturePro(l6_bat_texture,source,dest,origin,facing,WHITE);
@@ -968,8 +995,8 @@ void l6_draw_obstacles()
     //the fireplace, the clock, the portraits and the windows: the furniture that moves
     int fire_frame = (int)(l6_animation_time*8)%4;
     Rectangle fire_source = {fire_frame*256,0,256,256};
-    Rectangle fire_dest = {l6_fire.x,l6_fire.y,210*l6_u,210*l6_u};
-    Vector2 fire_origin = {105*l6_u,105*l6_u};
+    Rectangle fire_dest = {l6_fire.x,l6_fire.y,150*l6_u,150*l6_u};
+    Vector2 fire_origin = {75*l6_u,75*l6_u};
     DrawTexturePro(l6_fireplace_texture,fire_source,fire_dest,fire_origin,0,WHITE);
 
     int clock_frame = 0;
@@ -977,8 +1004,8 @@ void l6_draw_obstacles()
     if (swing<-0.4) clock_frame = 1;
     else if (swing>0.4) clock_frame = 2;
     Rectangle clock_source = {clock_frame*256,0,256,256};
-    Rectangle clock_dest = {l6_clock_at.x,l6_clock_at.y,120*l6_u,120*l6_u};
-    Vector2 clock_origin = {60*l6_u,60*l6_u};
+    Rectangle clock_dest = {l6_clock_at.x,l6_clock_at.y,92*l6_u,92*l6_u};
+    Vector2 clock_origin = {46*l6_u,46*l6_u};
     DrawTexturePro(l6_clock_texture,clock_source,clock_dest,clock_origin,0,WHITE);
 
     for (int i=0; i<3; i++)
@@ -987,8 +1014,8 @@ void l6_draw_obstacles()
         int look = 0;
         if (l6_ball.x > l6_portrait[i].x) look = 1;
         Rectangle source = {look*256,0,256,256};
-        Rectangle dest = {l6_portrait[i].x,l6_portrait[i].y,96*l6_u,96*l6_u};
-        Vector2 origin = {48*l6_u,48*l6_u};
+        Rectangle dest = {l6_portrait[i].x,l6_portrait[i].y,72*l6_u,72*l6_u};
+        Vector2 origin = {36*l6_u,36*l6_u};
         DrawTexturePro(l6_portrait_texture,source,dest,origin,0,WHITE);
     }
 
@@ -996,8 +1023,8 @@ void l6_draw_obstacles()
     {
         int frame = (int)(l6_animation_time*4+i)%4;
         Rectangle source = {frame*256,0,256,256};
-        Rectangle dest = {l6_window[i].x,l6_window[i].y,160*l6_u,160*l6_u};
-        Vector2 origin = {80*l6_u,20*l6_u};
+        Rectangle dest = {l6_window[i].x,l6_window[i].y,120*l6_u,120*l6_u};
+        Vector2 origin = {60*l6_u,15*l6_u};
         DrawTexturePro(l6_curtain_texture,source,dest,origin,0,WHITE);
     }
 
@@ -1008,8 +1035,8 @@ void l6_draw_obstacles()
     else if (l6_lantern_swing>40*l6_u) lantern_frame = 3;
     else lantern_frame = 2;
     Rectangle lantern_source = {lantern_frame*256,0,256,256};
-    Rectangle lantern_dest = {l6_lantern.x,l6_lantern.y,120*l6_u,120*l6_u};
-    Vector2 lantern_origin = {60*l6_u,60*l6_u};
+    Rectangle lantern_dest = {l6_lantern.x,l6_lantern.y,92*l6_u,92*l6_u};
+    Vector2 lantern_origin = {46*l6_u,46*l6_u};
     DrawTexturePro(l6_lantern_texture,lantern_source,lantern_dest,lantern_origin,0,WHITE);
 
     //the broken sconce and its sparks
@@ -1019,8 +1046,8 @@ void l6_draw_obstacles()
         int frame = (int)(l6_spark_stage/0.8*4);
         if (frame>3) frame = 3;
         Rectangle source = {frame*256,0,256,256};
-        Rectangle dest = {l6_sconce.x,l6_sconce.y,200*l6_u,200*l6_u};
-        Vector2 origin = {100*l6_u,100*l6_u};
+        Rectangle dest = {l6_sconce.x,l6_sconce.y,150*l6_u,150*l6_u};
+        Vector2 origin = {75*l6_u,75*l6_u};
         DrawTexturePro(l6_sparks_texture,source,dest,origin,0,WHITE);
     }
 
@@ -1029,8 +1056,8 @@ void l6_draw_obstacles()
     {
         int frame = (int)(l6_animation_time*14+i)%4;
         Rectangle source = {frame*128,0,128,128};
-        Rectangle dest = {l6_rat[i].x,l6_rat[i].y,52*l6_u,52*l6_u};
-        Vector2 origin = {26*l6_u,26*l6_u};
+        Rectangle dest = {l6_rat[i].x,l6_rat[i].y,40*l6_u,40*l6_u};
+        Vector2 origin = {20*l6_u,20*l6_u};
         float facing = 90;
         if (l6_rat_travel[i]>1) facing = -90;
         DrawTexturePro(l6_rat_texture,source,dest,origin,facing,WHITE);
@@ -1041,8 +1068,8 @@ void l6_draw_obstacles()
     {
         int frame = (int)(l6_animation_time*6+i*2)%4;
         Rectangle source = {frame*256,0,256,256};
-        Rectangle dest = {l6_wisp[i].x,l6_wisp[i].y,150*l6_u,150*l6_u};
-        Vector2 origin = {75*l6_u,75*l6_u};
+        Rectangle dest = {l6_wisp[i].x,l6_wisp[i].y,110*l6_u,110*l6_u};
+        Vector2 origin = {55*l6_u,55*l6_u};
         DrawTexturePro(l6_wisp_texture,source,dest,origin,0,WHITE);
     }
 
@@ -1055,8 +1082,8 @@ void l6_draw_obstacles()
         if (light>0.35) show = 0.25;
         int frame = (int)(l6_animation_time*6+i)%4;
         Rectangle source = {frame*192,0,192,192};
-        Rectangle dest = {here.x,here.y,86*l6_u,86*l6_u};
-        Vector2 origin = {43*l6_u,43*l6_u};
+        Rectangle dest = {here.x,here.y,62*l6_u,62*l6_u};
+        Vector2 origin = {31*l6_u,31*l6_u};
         DrawTexturePro(l6_ghost_texture,source,dest,origin,0,Fade(WHITE,show));
     }
 
@@ -1066,7 +1093,7 @@ void l6_draw_obstacles()
         float drop = 0;
         if (l6_chandelier_state==1) drop = l6_chandelier_fall*0.9;
         if (l6_chandelier_state==2) drop = 1;
-        float size = (120 - drop*40)*l6_u;
+        float size = (96 - drop*30)*l6_u;
         Rectangle source = {0,0,256,256};
         Rectangle dest = {l6_chandelier.x,l6_chandelier.y,size,size};
         Vector2 origin = {size/2,size/2};
