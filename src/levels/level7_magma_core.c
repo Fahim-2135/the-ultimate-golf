@@ -293,7 +293,7 @@ void l7_reset_level()
     for (int i=0; i<4; i++) l7_pumice_bob[i] = i*1.3;
 
     //the lava fall down the right wall
-    l7_lavafall = l7_make_rect(540,300,70,540);   //pours down the open lake, not off the edge
+    l7_lavafall = l7_make_rect(556,420,70,420);   //clear of the top bridge
 
     l7_heart_open = 0;
 
