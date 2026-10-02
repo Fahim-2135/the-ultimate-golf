@@ -3,6 +3,7 @@
 //course and gets stronger the higher you go, and the ice barely slows the ball down.
 
 //full global
+Vector2 no_origin_global = {0,0};
 int l5_width = 1920;
 int l5_height = 1080;
 float l5_u = 1;
@@ -30,6 +31,14 @@ Texture2D l5_snowball_texture;
 Texture2D l5_gondola_texture;
 Texture2D l5_campfire_texture;
 Texture2D l5_icicle_texture;
+Texture2D l5_ibex_texture;
+Texture2D l5_hare_texture;
+Texture2D l5_flags_texture;
+Texture2D l5_toboggan_texture;
+Texture2D l5_crate_texture;
+Texture2D l5_boulder_texture;
+Texture2D l5_spindrift_texture;
+Texture2D l5_sign_texture;
 
 //l5_ball and l5_pot
 Vector2 l5_ball;
@@ -100,6 +109,38 @@ float l5_wind_clock = 0;
 Vector2 l5_wind;
 float l5_wind_strength = 0;
 float l5_whiteout = 0;
+
+//--- the mountain's own life: these keep the screen busy, most of them harmless ---
+//ibex wander their ledge and nudge the ball, hares just hop about
+Vector2 l5_ibex[3];
+float l5_ibex_from[3];
+float l5_ibex_to[3];
+float l5_ibex_speed[3];
+float l5_ibex_radius;
+Vector2 l5_hare[4];
+float l5_hare_home[4][2];
+float l5_hare_hop[4];
+float l5_hare_rest[4];
+
+//strings of prayer flags: they lean with the wind, so they are the gauge you read
+Vector2 l5_flagline[3];
+float l5_flagline_width[3];
+
+//the toboggan runs a lane and knocks the ball off it
+Rectangle l5_toboggan;
+float l5_toboggan_from;
+float l5_toboggan_to;
+float l5_toboggan_speed;
+
+//supply crates are solid, ice boulders are bouncy, signposts are scenery
+Rectangle l5_crate[3];
+Vector2 l5_boulder[4];
+float l5_boulder_radius;
+float l5_boulder_hit[4];
+Vector2 l5_sign[3];
+
+//blowing snow drawn in bands across the course, and the plumes off the ridges
+float l5_drift_offset = 0;
 
 //the avalanche: once per game, it sweeps the left side and pushes the ball back down
 float l5_avalanche_wait = 0;
@@ -209,6 +250,62 @@ void l5_reset_level()
     l5_campfire[0] = l5_make_point(360,930);
     l5_campfire[1] = l5_make_point(900,640);
     l5_campfire[2] = l5_make_point(1760,700);
+
+    //ibex pacing their ledges
+    l5_ibex_radius = 26*l5_u;
+    l5_ibex[0] = l5_make_point(200,250);
+    l5_ibex_from[0] = 80*l5_u;
+    l5_ibex_to[0] = 430*l5_u;
+    l5_ibex_speed[0] = 70*l5_u;
+    l5_ibex[1] = l5_make_point(900,240);
+    l5_ibex_from[1] = 720*l5_u;
+    l5_ibex_to[1] = 1080*l5_u;
+    l5_ibex_speed[1] = -85*l5_u;
+    l5_ibex[2] = l5_make_point(1600,950);
+    l5_ibex_from[2] = 1450*l5_u;
+    l5_ibex_to[2] = 1840*l5_u;
+    l5_ibex_speed[2] = 95*l5_u;
+
+    //hares hopping on the spot, never in the way
+    l5_hare_home[0][0] = 140; l5_hare_home[0][1] = 860;
+    l5_hare_home[1][0] = 320; l5_hare_home[1][1] = 330;
+    l5_hare_home[2][0] = 1020; l5_hare_home[2][1] = 930;
+    l5_hare_home[3][0] = 1800; l5_hare_home[3][1] = 390;
+    for (int i=0; i<4; i++)
+    {
+        l5_hare[i] = l5_make_point(l5_hare_home[i][0],l5_hare_home[i][1]);
+        l5_hare_hop[i] = 0;
+        l5_hare_rest[i] = 1 + i*0.7;
+    }
+
+    //flag lines strung across the course
+    l5_flagline[0] = l5_make_point(90,760);
+    l5_flagline_width[0] = 330*l5_u;
+    l5_flagline[1] = l5_make_point(720,170);
+    l5_flagline_width[1] = 360*l5_u;
+    l5_flagline[2] = l5_make_point(1440,840);
+    l5_flagline_width[2] = 400*l5_u;
+
+    //the toboggan sliding the middle strip
+    l5_toboggan = l5_make_rect(840,560,110,150);
+    l5_toboggan_from = 430*l5_u;
+    l5_toboggan_to = 800*l5_u;
+    l5_toboggan_speed = 150*l5_u;
+
+    //crates, boulders, signs
+    l5_crate[0] = l5_make_rect(300,930,70,70);
+    l5_crate[1] = l5_make_rect(1000,230,70,70);
+    l5_crate[2] = l5_make_rect(1480,930,70,70);
+    l5_boulder_radius = 30*l5_u;
+    l5_boulder[0] = l5_make_point(140,520);
+    l5_boulder[1] = l5_make_point(980,300);
+    l5_boulder[2] = l5_make_point(1700,560);
+    l5_boulder[3] = l5_make_point(1520,250);
+    for (int i=0; i<4; i++) l5_boulder_hit[i] = 0;
+    l5_sign[0] = l5_make_point(430,820);
+    l5_sign[1] = l5_make_point(760,420);
+    l5_sign[2] = l5_make_point(1630,700);
+    l5_drift_offset = 0;
 
     //the weather
     l5_wind_clock = 0;
@@ -337,6 +434,66 @@ void l5_update_obstacles(float dt)
     {
         float part = (inside-10.2)/1.2;
         l5_whiteout = sin(part*PI)*0.62;
+    }
+
+    //blowing snow always travels with the wind
+    l5_drift_offset = l5_drift_offset + l5_wind.x*dt*0.6;
+
+    //ibex pacing
+    for (int i=0; i<3; i++)
+    {
+        l5_ibex[i].x = l5_ibex[i].x + l5_ibex_speed[i]*dt;
+        if (l5_ibex[i].x<l5_ibex_from[i])
+        {
+            l5_ibex[i].x = l5_ibex_from[i];
+            l5_ibex_speed[i] = fabsf(l5_ibex_speed[i]);
+        }
+        if (l5_ibex[i].x>l5_ibex_to[i])
+        {
+            l5_ibex[i].x = l5_ibex_to[i];
+            l5_ibex_speed[i] = -fabsf(l5_ibex_speed[i]);
+        }
+    }
+
+    //hares: a rest, then a hop a little way, then a rest again
+    for (int i=0; i<4; i++)
+    {
+        if (l5_hare_hop[i]>0)
+        {
+            l5_hare_hop[i] = l5_hare_hop[i] - dt;
+            l5_hare[i].x = l5_hare[i].x + sin(i*2.1)*90*l5_u*dt;
+            l5_hare[i].y = l5_hare[i].y + cos(i*1.7)*70*l5_u*dt;
+            if (l5_hare_hop[i]<=0) l5_hare_rest[i] = 1.2 + GetRandomValue(0,25)/10.0;
+        }
+        else
+        {
+            l5_hare_rest[i] = l5_hare_rest[i] - dt;
+            if (l5_hare_rest[i]<=0)
+            {
+                l5_hare_hop[i] = 0.5;
+                //never let one wander off its patch
+                Vector2 home = l5_make_point(l5_hare_home[i][0],l5_hare_home[i][1]);
+                if (Vector2Distance(l5_hare[i],home)>120*l5_u) l5_hare[i] = home;
+            }
+        }
+    }
+
+    //the toboggan runs up and down its lane
+    l5_toboggan.y = l5_toboggan.y + l5_toboggan_speed*dt;
+    if (l5_toboggan.y<l5_toboggan_from)
+    {
+        l5_toboggan.y = l5_toboggan_from;
+        l5_toboggan_speed = fabsf(l5_toboggan_speed);
+    }
+    if (l5_toboggan.y>l5_toboggan_to)
+    {
+        l5_toboggan.y = l5_toboggan_to;
+        l5_toboggan_speed = -fabsf(l5_toboggan_speed);
+    }
+
+    for (int i=0; i<4; i++)
+    {
+        if (l5_boulder_hit[i]>0) l5_boulder_hit[i] = l5_boulder_hit[i] - dt;
     }
 
     //the gondola slides back and forth
@@ -613,6 +770,31 @@ void l5_update_ball(float dt)
     //pines are solid
     for (int i=0; i<5; i++) l5_bounce_off_circle(l5_pine[i],l5_pine_radius,1);
 
+    //ice boulders are springy, crates are not
+    for (int i=0; i<4; i++)
+    {
+        if (l5_bounce_off_circle(l5_boulder[i],l5_boulder_radius,1.3)) l5_boulder_hit[i] = 0.2;
+    }
+    for (int i=0; i<3; i++) l5_bounce_off_rectangle(l5_crate[i],Vector2Zero());
+
+    //an ibex will shoulder the ball out of its way
+    for (int i=0; i<3; i++)
+    {
+        Vector2 ibex_speed = {l5_ibex_speed[i],0};
+        if (Vector2Distance(l5_ball,l5_ibex[i]) < l5_ibex_radius+l5_radius_ball)
+        {
+            Vector2 away = Vector2Subtract(l5_ball,l5_ibex[i]);
+            if (Vector2Length(away)<1) away = l5_make_point(0,1);
+            l5_ball = Vector2Add(l5_ibex[i],Vector2Scale(Vector2Normalize(away),l5_ibex_radius+l5_radius_ball));
+            l5_speed = Vector2ClampValue(Vector2Add(l5_speed,Vector2Scale(Vector2Normalize(away),180*l5_u)),0,l5_max_speed*l5_u);
+            l5_speed.x = l5_speed.x + ibex_speed.x*0.3;
+        }
+    }
+
+    //the toboggan knocks the ball down the lane
+    Vector2 sled_speed = {0,l5_toboggan_speed};
+    l5_bounce_off_rectangle(l5_toboggan,sled_speed);
+
     //the gondola's walls push the ball along when it slides into one
     if (on_gondola==0)
     {
@@ -787,6 +969,56 @@ void l5_draw_obstacles()
         DrawTexturePro(l5_icicle_texture,source,dest,origin,0,WHITE);
     }
 
+    //crates and signposts: the plain, readable furniture of the course
+    for (int i=0; i<3; i++)
+    {
+        Rectangle source = {0,0,256,256};
+        DrawTexturePro(l5_crate_texture,source,l5_crate[i],no_origin,0,WHITE);
+    }
+    for (int i=0; i<3; i++)
+    {
+        Rectangle source = {0,0,256,256};
+        Rectangle dest = {l5_sign[i].x,l5_sign[i].y,90*l5_u,90*l5_u};
+        Vector2 origin = {45*l5_u,45*l5_u};
+        DrawTexturePro(l5_sign_texture,source,dest,origin,0,WHITE);
+    }
+
+    //ice boulders
+    for (int i=0; i<4; i++)
+    {
+        float size = l5_boulder_radius*2.4;
+        if (l5_boulder_hit[i]>0) size = size + 10*l5_u*l5_boulder_hit[i]/0.2;
+        Rectangle source = {(i%3)*256,0,256,256};
+        Rectangle dest = {l5_boulder[i].x,l5_boulder[i].y,size,size};
+        Vector2 origin = {size/2,size/2};
+        DrawTexturePro(l5_boulder_texture,source,dest,origin,i*23,WHITE);
+    }
+
+    //the toboggan
+    Rectangle sled_source = {(l5_toboggan_speed>0 ? 256 : 0),0,256,256};
+    DrawTexturePro(l5_toboggan_texture,sled_source,l5_toboggan,no_origin,0,WHITE);
+
+    //hares and ibex
+    for (int i=0; i<4; i++)
+    {
+        int frame = 0;
+        if (l5_hare_hop[i]>0) frame = 1 + (int)((0.5-l5_hare_hop[i])*8)%3;
+        Rectangle source = {frame*128,0,128,128};
+        Rectangle dest = {l5_hare[i].x,l5_hare[i].y,56*l5_u,56*l5_u};
+        Vector2 origin = {28*l5_u,28*l5_u};
+        DrawTexturePro(l5_hare_texture,source,dest,origin,0,WHITE);
+    }
+    for (int i=0; i<3; i++)
+    {
+        int frame = (int)(l5_animation_time*7+i)%4;
+        Rectangle source = {frame*128,0,128,128};
+        Rectangle dest = {l5_ibex[i].x,l5_ibex[i].y,84*l5_u,84*l5_u};
+        Vector2 origin = {42*l5_u,42*l5_u};
+        float facing = 90;
+        if (l5_ibex_speed[i]<0) facing = -90;
+        DrawTexturePro(l5_ibex_texture,source,dest,origin,facing,WHITE);
+    }
+
     //pines
     for (int i=0; i<5; i++)
     {
@@ -826,6 +1058,33 @@ void l5_draw_ball_and_pot()
 //the weather on top of everything: blowing snow, then the whiteout at the peak of a gale
 void l5_draw_weather()
 {
+    //flag lines lean the way the wind is blowing, so you can read the gale before it hits
+    for (int i=0; i<3; i++)
+    {
+        float width = l5_flagline_width[i];
+        DrawLineEx(l5_flagline[i],(Vector2){l5_flagline[i].x+width,l5_flagline[i].y},3*l5_u,Fade(GetColor(0x6E5B42FF),0.9));
+        int frame = (int)(l5_animation_time*6+i)%4;
+        Rectangle source = {frame*256,0,256,256};
+        Rectangle dest = {l5_flagline[i].x+width/2,l5_flagline[i].y+18*l5_u,width,110*l5_u};
+        Vector2 origin = {width/2,55*l5_u};
+        float lean = l5_wind.x/l5_u*0.03;
+        DrawTexturePro(l5_flags_texture,source,dest,origin,lean,WHITE);
+    }
+
+    //bands of blowing snow, travelling with the wind
+    for (int band=0; band<4; band++)
+    {
+        int frame = (int)(l5_animation_time*9+band)%4;
+        Rectangle source = {frame*256,0,256,256};
+        float y = 120*l5_u + band*(l5_height-200*l5_u)/4;
+        float offset = fmod(l5_drift_offset*(0.6+band*0.2),l5_width);
+        for (int k=-1; k<=l5_width/(420*l5_u)+1; k++)
+        {
+            Rectangle dest = {offset + k*420*l5_u,y,420*l5_u,150*l5_u};
+            DrawTexturePro(l5_spindrift_texture,source,dest,no_origin_global,0,Fade(WHITE,0.55));
+        }
+    }
+
     float drift = l5_wind_clock*l5_wind_strength*l5_u;
     for (int i=0; i<150; i++)
     {
@@ -967,6 +1226,14 @@ void l5_start(int screen_width, int screen_height)
     l5_gondola_texture = LoadTexture("assets/frozen/frozen_gondola.png");
     l5_campfire_texture = LoadTexture("assets/frozen/frozen_campfire.png");
     l5_icicle_texture = LoadTexture("assets/frozen/frozen_icicle.png");
+    l5_ibex_texture = LoadTexture("assets/frozen/frozen_ibex.png");
+    l5_hare_texture = LoadTexture("assets/frozen/frozen_hare.png");
+    l5_flags_texture = LoadTexture("assets/frozen/frozen_flags.png");
+    l5_toboggan_texture = LoadTexture("assets/frozen/frozen_toboggan.png");
+    l5_crate_texture = LoadTexture("assets/frozen/frozen_crate.png");
+    l5_boulder_texture = LoadTexture("assets/frozen/frozen_boulder.png");
+    l5_spindrift_texture = LoadTexture("assets/frozen/frozen_spindrift.png");
+    l5_sign_texture = LoadTexture("assets/frozen/frozen_sign.png");
     SetTextureWrap(l5_snow_texture,TEXTURE_WRAP_REPEAT);
     SetTextureWrap(l5_ice_texture,TEXTURE_WRAP_REPEAT);
     SetTextureFilter(l5_snow_texture,TEXTURE_FILTER_BILINEAR);
@@ -976,6 +1243,14 @@ void l5_start(int screen_width, int screen_height)
     SetTextureFilter(l5_gondola_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_campfire_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_icicle_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_ibex_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_hare_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_flags_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_toboggan_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_crate_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_boulder_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_spindrift_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_sign_texture,TEXTURE_FILTER_BILINEAR);
 
     //every size is N*l5_u, so it looks the same on any screen
     l5_u = l5_height/1080.0;
@@ -1045,4 +1320,12 @@ void l5_unload()
     UnloadTexture(l5_gondola_texture);
     UnloadTexture(l5_campfire_texture);
     UnloadTexture(l5_icicle_texture);
+    UnloadTexture(l5_ibex_texture);
+    UnloadTexture(l5_hare_texture);
+    UnloadTexture(l5_flags_texture);
+    UnloadTexture(l5_toboggan_texture);
+    UnloadTexture(l5_crate_texture);
+    UnloadTexture(l5_boulder_texture);
+    UnloadTexture(l5_spindrift_texture);
+    UnloadTexture(l5_sign_texture);
 }

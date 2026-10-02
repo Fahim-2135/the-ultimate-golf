@@ -29,6 +29,14 @@ Texture2D l6_chandelier_texture;
 Texture2D l6_mirror_texture;
 Texture2D l6_cobweb_texture;
 Texture2D l6_bat_texture;
+Texture2D l6_wisp_texture;
+Texture2D l6_lantern_texture;
+Texture2D l6_sparks_texture;
+Texture2D l6_fireplace_texture;
+Texture2D l6_rat_texture;
+Texture2D l6_portrait_texture;
+Texture2D l6_clock_texture;
+Texture2D l6_curtain_texture;
 
 //the darkness: everything is drawn, then this mask multiplies it down to nothing
 //except where a light is
@@ -110,6 +118,43 @@ float l6_chandelier_fall = 0;
 Vector2 l6_mirror[2];
 float l6_mirror_facing[2];
 float l6_mirror_cooldown = 0;
+
+//--- everything that moves in here is a light, so the room is never still and never
+//--- unreadable for long ---
+//will-o-wisps drift their own routes carrying a cold green glow
+Vector2 l6_wisp[3];
+Vector2 l6_wisp_from[3];
+Vector2 l6_wisp_to[3];
+float l6_wisp_travel[3];
+float l6_wisp_speed[3];
+
+//a lantern swinging on its chain: the pool of light swings with it
+Vector2 l6_lantern_anchor;
+float l6_lantern_swing = 0;
+Vector2 l6_lantern;
+
+//a broken sconce that throws sparks every few seconds
+Vector2 l6_sconce;
+float l6_spark_wait = 0;
+float l6_spark_stage = 0;
+
+//the fireplace: a slow breathing glow at one end of the hall
+Vector2 l6_fire;
+float l6_fire_pulse = 0;
+
+//lightning through the windows shows the whole house for a moment
+float l6_storm_wait = 0;
+float l6_storm_flash = 0;
+
+//rats crossing the floor, portraits that follow the ball, a curtain at a broken window
+Vector2 l6_rat[3];
+Vector2 l6_rat_from[3];
+Vector2 l6_rat_to[3];
+float l6_rat_travel[3];
+float l6_rat_speed[3];
+Vector2 l6_portrait[3];
+Vector2 l6_window[2];
+Vector2 l6_clock_at;
 
 //two plates hold the crypt shut until both are pressed
 Vector2 l6_plate[2];
@@ -258,6 +303,64 @@ void l6_reset_level()
     l6_crypt_door = l6_make_rect(1440,480,30,220);
     l6_crypt_open = 0;
 
+    //wisps drifting the corridors
+    l6_wisp_from[0] = l6_make_point(140,760);
+    l6_wisp_to[0] = l6_make_point(390,930);
+    l6_wisp_speed[0] = 0.17;
+    l6_wisp_from[1] = l6_make_point(640,250);
+    l6_wisp_to[1] = l6_make_point(1060,200);
+    l6_wisp_speed[1] = 0.21;
+    l6_wisp_from[2] = l6_make_point(900,780);
+    l6_wisp_to[2] = l6_make_point(1340,820);
+    l6_wisp_speed[2] = 0.14;
+    for (int i=0; i<3; i++)
+    {
+        l6_wisp_travel[i] = i*0.4;
+        l6_wisp[i] = l6_wisp_from[i];
+    }
+
+    //the swinging lantern over the middle corridor
+    l6_lantern_anchor = l6_make_point(760,560);
+    l6_lantern = l6_lantern_anchor;
+    l6_lantern_swing = 0;
+
+    //the broken sconce, high on the gallery wall
+    l6_sconce = l6_make_point(470,150);
+    l6_spark_wait = 3;
+    l6_spark_stage = 0;
+
+    //the fireplace in the hall
+    l6_fire = l6_make_point(130,640);
+    l6_fire_pulse = 0;
+
+    //the storm outside
+    l6_storm_wait = 7;
+    l6_storm_flash = 0;
+
+    //rats
+    l6_rat_from[0] = l6_make_point(120,980);
+    l6_rat_to[0] = l6_make_point(400,960);
+    l6_rat_speed[0] = 0.33;
+    l6_rat_from[1] = l6_make_point(700,620);
+    l6_rat_to[1] = l6_make_point(1100,600);
+    l6_rat_speed[1] = 0.28;
+    l6_rat_from[2] = l6_make_point(1500,960);
+    l6_rat_to[2] = l6_make_point(1800,940);
+    l6_rat_speed[2] = 0.4;
+    for (int i=0; i<3; i++)
+    {
+        l6_rat_travel[i] = i*0.5;
+        l6_rat[i] = l6_rat_from[i];
+    }
+
+    //portraits watching, windows with curtains, and the clock itself
+    l6_portrait[0] = l6_make_point(110,230);
+    l6_portrait[1] = l6_make_point(820,140);
+    l6_portrait[2] = l6_make_point(1700,300);
+    l6_window[0] = l6_make_point(300,130);
+    l6_window[1] = l6_make_point(1250,140);
+    l6_clock_at = l6_make_point(500,760);
+
     //ball and pot
     l6_start_position = l6_make_point(150,940);
     l6_ball = l6_start_position;
@@ -351,6 +454,29 @@ float l6_light_at(Vector2 point)
             if (here>best) best = here;
         }
     }
+    //the lights that move count too: a wisp drifting past really does banish a ghost
+    for (int i=0; i<3; i++)
+    {
+        d = Vector2Distance(point,l6_wisp[i]);
+        if (d < 180*l6_u)
+        {
+            float here = (1 - d/(180*l6_u))*0.8;
+            if (here>best) best = here;
+        }
+    }
+    d = Vector2Distance(point,l6_lantern);
+    if (d < 260*l6_u)
+    {
+        float here = 1 - d/(260*l6_u);
+        if (here>best) best = here;
+    }
+    d = Vector2Distance(point,l6_fire);
+    if (d < 300*l6_u)
+    {
+        float here = (1 - d/(300*l6_u))*l6_fire_pulse;
+        if (here>best) best = here;
+    }
+    if (l6_storm_flash>0.3 && best<l6_storm_flash) best = l6_storm_flash;
     return best;
 }
 
@@ -372,6 +498,16 @@ void l6_build_light_mask()
     {
         if (l6_lamp_on[i]>0) DrawCircleGradient(l6_lamp[i],420*l6_u,Fade(WHITE,0.9*l6_lamp_on[i]),BLANK);
     }
+    //the moving lights: wisps, the swinging lantern, the fire, the sparks, the lightning
+    for (int i=0; i<3; i++) DrawCircleGradient(l6_wisp[i],180*l6_u,Fade(GetColor(0x6FE7D0FF),0.75),BLANK);
+    DrawCircleGradient(l6_lantern,260*l6_u,Fade(l6_candle_warm,0.85),BLANK);
+    DrawCircleGradient(l6_fire,300*l6_u,Fade(GetColor(0xFF8A3CFF),0.75*l6_fire_pulse),BLANK);
+    if (l6_spark_stage>0) DrawCircleGradient(l6_sconce,230*l6_u,Fade(GetColor(0xFFD27AFF),0.9*(1-l6_spark_stage/0.8)),BLANK);
+    if (l6_storm_flash>0)
+    {
+        DrawRectangle(0,0,l6_width,l6_height,Fade(GetColor(0xBFD4E8FF),0.55*l6_storm_flash));
+        for (int i=0; i<2; i++) DrawCircleGradient(l6_window[i],520*l6_u,Fade(WHITE,0.8*l6_storm_flash),BLANK);
+    }
     if (l6_chime_flash>0) DrawRectangle(0,0,l6_width,l6_height,Fade(WHITE,0.22*l6_chime_flash));
     //the crypt is always a little lit, so the end of the level can be found
     DrawCircleGradient(l6_pot,180*l6_u,Fade(l6_crypt_green,0.55),BLANK);
@@ -383,6 +519,62 @@ void l6_build_light_mask()
 void l6_update_obstacles(float dt)
 {
     l6_animation_time = l6_animation_time + dt;
+
+    //wisps drift out and back along their line
+    for (int i=0; i<3; i++)
+    {
+        l6_wisp_travel[i] = l6_wisp_travel[i] + dt*l6_wisp_speed[i];
+        if (l6_wisp_travel[i]>2) l6_wisp_travel[i] = l6_wisp_travel[i] - 2;
+        float t = l6_wisp_travel[i];
+        if (t>1) t = 2 - t;
+        l6_wisp[i] = Vector2Lerp(l6_wisp_from[i],l6_wisp_to[i],t);
+    }
+
+    //the lantern swings, and so does its light
+    l6_lantern_swing = sin(l6_animation_time*1.6)*120*l6_u;
+    l6_lantern.x = l6_lantern_anchor.x + l6_lantern_swing;
+    l6_lantern.y = l6_lantern_anchor.y + fabsf(l6_lantern_swing)*0.12;
+
+    //the sconce: a long wait, then a short shower of sparks
+    if (l6_spark_stage>0)
+    {
+        l6_spark_stage = l6_spark_stage + dt;
+        if (l6_spark_stage>0.8)
+        {
+            l6_spark_stage = 0;
+            l6_spark_wait = 4 + GetRandomValue(0,40)/10.0;
+        }
+    }
+    else
+    {
+        l6_spark_wait = l6_spark_wait - dt;
+        if (l6_spark_wait<=0) l6_spark_stage = 0.0001;
+    }
+
+    //the fire breathes
+    l6_fire_pulse = 0.78 + 0.22*sin(l6_animation_time*2.1) + 0.06*sin(l6_animation_time*7.3);
+
+    //lightning: rare, bright, and it shows the whole house
+    if (l6_storm_flash>0) l6_storm_flash = l6_storm_flash - dt*2.2;
+    else
+    {
+        l6_storm_wait = l6_storm_wait - dt;
+        if (l6_storm_wait<=0)
+        {
+            l6_storm_flash = 1;
+            l6_storm_wait = 11 + GetRandomValue(0,90)/10.0;
+        }
+    }
+
+    //rats scurry across and back
+    for (int i=0; i<3; i++)
+    {
+        l6_rat_travel[i] = l6_rat_travel[i] + dt*l6_rat_speed[i];
+        if (l6_rat_travel[i]>2) l6_rat_travel[i] = l6_rat_travel[i] - 2;
+        float t = l6_rat_travel[i];
+        if (t>1) t = 2 - t;
+        l6_rat[i] = Vector2Lerp(l6_rat_from[i],l6_rat_to[i],t);
+    }
 
     //the grandfather clock: every 8 seconds it chimes and the phasing walls swap over
     l6_clock_timer = l6_clock_timer + dt;
@@ -773,6 +965,87 @@ void l6_draw_obstacles()
         DrawTexturePro(l6_bat_texture,source,dest,origin,facing,WHITE);
     }
 
+    //the fireplace, the clock, the portraits and the windows: the furniture that moves
+    int fire_frame = (int)(l6_animation_time*8)%4;
+    Rectangle fire_source = {fire_frame*256,0,256,256};
+    Rectangle fire_dest = {l6_fire.x,l6_fire.y,210*l6_u,210*l6_u};
+    Vector2 fire_origin = {105*l6_u,105*l6_u};
+    DrawTexturePro(l6_fireplace_texture,fire_source,fire_dest,fire_origin,0,WHITE);
+
+    int clock_frame = 0;
+    float swing = sin(l6_animation_time*2);
+    if (swing<-0.4) clock_frame = 1;
+    else if (swing>0.4) clock_frame = 2;
+    Rectangle clock_source = {clock_frame*256,0,256,256};
+    Rectangle clock_dest = {l6_clock_at.x,l6_clock_at.y,120*l6_u,120*l6_u};
+    Vector2 clock_origin = {60*l6_u,60*l6_u};
+    DrawTexturePro(l6_clock_texture,clock_source,clock_dest,clock_origin,0,WHITE);
+
+    for (int i=0; i<3; i++)
+    {
+        //the eyes follow the ball
+        int look = 0;
+        if (l6_ball.x > l6_portrait[i].x) look = 1;
+        Rectangle source = {look*256,0,256,256};
+        Rectangle dest = {l6_portrait[i].x,l6_portrait[i].y,96*l6_u,96*l6_u};
+        Vector2 origin = {48*l6_u,48*l6_u};
+        DrawTexturePro(l6_portrait_texture,source,dest,origin,0,WHITE);
+    }
+
+    for (int i=0; i<2; i++)
+    {
+        int frame = (int)(l6_animation_time*4+i)%4;
+        Rectangle source = {frame*256,0,256,256};
+        Rectangle dest = {l6_window[i].x,l6_window[i].y,160*l6_u,160*l6_u};
+        Vector2 origin = {80*l6_u,20*l6_u};
+        DrawTexturePro(l6_curtain_texture,source,dest,origin,0,WHITE);
+    }
+
+    //the swinging lantern and its chain
+    DrawLineEx(l6_lantern_anchor,l6_lantern,3*l6_u,Fade(GetColor(0x6E6A60FF),0.9));
+    int lantern_frame = 0;
+    if (l6_lantern_swing<-40*l6_u) lantern_frame = 1;
+    else if (l6_lantern_swing>40*l6_u) lantern_frame = 3;
+    else lantern_frame = 2;
+    Rectangle lantern_source = {lantern_frame*256,0,256,256};
+    Rectangle lantern_dest = {l6_lantern.x,l6_lantern.y,120*l6_u,120*l6_u};
+    Vector2 lantern_origin = {60*l6_u,60*l6_u};
+    DrawTexturePro(l6_lantern_texture,lantern_source,lantern_dest,lantern_origin,0,WHITE);
+
+    //the broken sconce and its sparks
+    DrawCircleV(l6_sconce,14*l6_u,Fade(l6_wall_light,0.9));
+    if (l6_spark_stage>0)
+    {
+        int frame = (int)(l6_spark_stage/0.8*4);
+        if (frame>3) frame = 3;
+        Rectangle source = {frame*256,0,256,256};
+        Rectangle dest = {l6_sconce.x,l6_sconce.y,200*l6_u,200*l6_u};
+        Vector2 origin = {100*l6_u,100*l6_u};
+        DrawTexturePro(l6_sparks_texture,source,dest,origin,0,WHITE);
+    }
+
+    //rats
+    for (int i=0; i<3; i++)
+    {
+        int frame = (int)(l6_animation_time*14+i)%4;
+        Rectangle source = {frame*128,0,128,128};
+        Rectangle dest = {l6_rat[i].x,l6_rat[i].y,52*l6_u,52*l6_u};
+        Vector2 origin = {26*l6_u,26*l6_u};
+        float facing = 90;
+        if (l6_rat_travel[i]>1) facing = -90;
+        DrawTexturePro(l6_rat_texture,source,dest,origin,facing,WHITE);
+    }
+
+    //wisps
+    for (int i=0; i<3; i++)
+    {
+        int frame = (int)(l6_animation_time*6+i*2)%4;
+        Rectangle source = {frame*256,0,256,256};
+        Rectangle dest = {l6_wisp[i].x,l6_wisp[i].y,150*l6_u,150*l6_u};
+        Vector2 origin = {75*l6_u,75*l6_u};
+        DrawTexturePro(l6_wisp_texture,source,dest,origin,0,WHITE);
+    }
+
     //ghosts, fainter where it is light
     for (int i=0; i<3; i++)
     {
@@ -921,6 +1194,14 @@ void l6_start(int screen_width, int screen_height)
     l6_mirror_texture = LoadTexture("assets/manor/manor_mirror.png");
     l6_cobweb_texture = LoadTexture("assets/manor/manor_cobweb.png");
     l6_bat_texture = LoadTexture("assets/manor/manor_bat.png");
+    l6_wisp_texture = LoadTexture("assets/manor/manor_wisp.png");
+    l6_lantern_texture = LoadTexture("assets/manor/manor_lantern.png");
+    l6_sparks_texture = LoadTexture("assets/manor/manor_sparks.png");
+    l6_fireplace_texture = LoadTexture("assets/manor/manor_fireplace.png");
+    l6_rat_texture = LoadTexture("assets/manor/manor_rat.png");
+    l6_portrait_texture = LoadTexture("assets/manor/manor_portrait.png");
+    l6_clock_texture = LoadTexture("assets/manor/manor_clock.png");
+    l6_curtain_texture = LoadTexture("assets/manor/manor_curtain.png");
     SetTextureWrap(l6_floor_texture,TEXTURE_WRAP_REPEAT);
     SetTextureFilter(l6_floor_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l6_ghost_texture,TEXTURE_FILTER_BILINEAR);
@@ -929,6 +1210,14 @@ void l6_start(int screen_width, int screen_height)
     SetTextureFilter(l6_mirror_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l6_cobweb_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l6_bat_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l6_wisp_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l6_lantern_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l6_sparks_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l6_fireplace_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l6_rat_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l6_portrait_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l6_clock_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l6_curtain_texture,TEXTURE_FILTER_BILINEAR);
 
     l6_light_mask = LoadRenderTexture(screen_width,screen_height);
     l6_mask_ready = 1;
@@ -1000,6 +1289,14 @@ void l6_unload()
     UnloadTexture(l6_mirror_texture);
     UnloadTexture(l6_cobweb_texture);
     UnloadTexture(l6_bat_texture);
+    UnloadTexture(l6_wisp_texture);
+    UnloadTexture(l6_lantern_texture);
+    UnloadTexture(l6_sparks_texture);
+    UnloadTexture(l6_fireplace_texture);
+    UnloadTexture(l6_rat_texture);
+    UnloadTexture(l6_portrait_texture);
+    UnloadTexture(l6_clock_texture);
+    UnloadTexture(l6_curtain_texture);
     if (l6_mask_ready==1) UnloadRenderTexture(l6_light_mask);
     l6_mask_ready = 0;
 }
