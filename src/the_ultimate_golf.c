@@ -1614,7 +1614,7 @@ const char *brief_text[LEVELS][13] = {
      "Crosses the room on a loop\nand knocks the ball off line.",
      "Both plates down opens the crypt.\nFall anywhere and they pop back up."},
     {"Everything that is not rock is lava.\nTouch it and you start the shot again.",
-     "It climbs the whole level and never\ngoes back. The floor runs out.",
+     "It climbs from the bottom and never\ngoes back. You start low. Finish high.",
      "Grey is safe, glowing is not.\nFour seconds on, two seconds deadly.",
      "Cracks fast over the lake, and what is\nunderneath is not water.",
      "The hole is always deadly. Now and then\nit floods a circle around itself, then drains.",

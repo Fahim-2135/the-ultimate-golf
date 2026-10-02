@@ -226,9 +226,9 @@ void l7_reset_level()
 
     //the lava tube: it takes you from the end of terrace 4 down onto terrace 5, which
     //is the one shortcut on the way down
-    l7_tube_in = l7_make_point(1700,670);
-    l7_tube_out = l7_make_point(300,840);
-    l7_tube_facing = 0;
+    l7_tube_in = l7_make_point(1000,800);
+    l7_tube_out = l7_make_point(1700,670);
+    l7_tube_facing = 180;
     l7_tube_cooldown = 0;
 
     //steam across terrace 4 and the heart chamber
@@ -277,12 +277,12 @@ void l7_reset_level()
     l7_lavafall_clock = 0;
 
     //ball and heart, a whole descent apart
-    l7_start_position = l7_make_point(140,160);
+    l7_start_position = l7_make_point(340,995);
     l7_ball = l7_start_position;
     l7_last_shot_position = l7_start_position;
     l7_speed.x = 0;
     l7_speed.y = 0;
-    l7_pot = l7_make_point(340,995);
+    l7_pot = l7_make_point(200,160);
     l7_stroke = 0;
     l7_game_state = 0;
     l7_aiming = 0;
@@ -376,7 +376,7 @@ void l7_update_obstacles(float dt)
 
     //the lava climbs, and never goes back down
     l7_lava_line = l7_lava_line - l7_lava_rise*dt;
-    if (l7_lava_line < 800*l7_u) l7_lava_line = 800*l7_u;   //it stops below the heart: the level has to stay winnable
+    if (l7_lava_line < 400*l7_u) l7_lava_line = 400*l7_u;   //it stops two terraces below the heart: the level has to stay winnable
 
     //the lava fall pours, then stops, then pours again
     l7_lavafall_clock = l7_lavafall_clock + dt;
@@ -1054,17 +1054,22 @@ void l7_draw_rising_lava()
     int frame = (int)(l7_animation_time*2)%2;
     Rectangle source = {frame*512,0,512,512};
     Vector2 no_origin = {0,0};
-    int columns = l7_width/(256*l7_u) + 1;
+    //tiled at the same size as the lake in the background, so the risen lava reads as the
+    //same stuff and not as a pattern laid over the level
+    int columns = l7_width/(170*l7_u) + 1;
     float band = l7_height - l7_lava_line;
-    int rows = band/(256*l7_u) + 1;
+    int rows = band/(170*l7_u) + 1;
     for (int x=0; x<columns; x++)
     {
         for (int y=0; y<rows; y++)
         {
-            Rectangle dest = {x*256*l7_u,l7_lava_line + y*256*l7_u,256*l7_u,256*l7_u};
+            Rectangle dest = {x*170*l7_u,l7_lava_line + y*170*l7_u,170*l7_u,170*l7_u};
             DrawTexturePro(l7_lava_texture,source,dest,no_origin,0,WHITE);
         }
     }
+    //a wash over it, and it gets darker the deeper down you look
+    DrawRectangle(0,l7_lava_line,l7_width,band,Fade(GetColor(0x6A2A10FF),0.34));
+    DrawRectangleGradientV(0,l7_lava_line+40*l7_u,l7_width,band,BLANK,Fade(BLACK,0.45));
     //the edge of it, with a bright lip and a haze above
     DrawRectangle(0,l7_lava_line-6*l7_u,l7_width,8*l7_u,l7_lava_hot);
     DrawRectangleGradientV(0,l7_lava_line-70*l7_u,l7_width,70*l7_u,BLANK,Fade(l7_lava,0.55));
@@ -1169,7 +1174,7 @@ void l7_background_step(float dt)
 {
     l7_update_obstacles(dt);
     //the menu must not flood itself over a few minutes, so the lava is held down there
-    if (l7_lava_line < 900*l7_u) l7_lava_line = 1080*l7_u;
+    if (l7_lava_line < 500*l7_u) l7_lava_line = 1080*l7_u;
 }
 
 
