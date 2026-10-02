@@ -7,8 +7,8 @@
 int l6_width = 1920;
 int l6_height = 1080;
 float l6_u = 1;
-int l6_stroke_base = 24;
-int l6_stroke_limit = 24;
+int l6_stroke_base = 26;
+int l6_stroke_limit = 26;
 #define l6_max_speed 650
 
 //colours
@@ -146,10 +146,10 @@ void l6_reset_level()
 
     //the hall, bottom left, with a doorway up into the gallery
     l6_wall_rect[4] = l6_make_rect(420,520,30,510);       //hall right wall
-    l6_wall_rect[5] = l6_make_rect(70,520,360,30);        //hall ceiling, gap on the right
+    l6_wall_rect[5] = l6_make_rect(70,520,230,30);        //hall ceiling: the doorway is the gap at x 300-420
 
     //the gallery, top left
-    l6_wall_rect[6] = l6_make_rect(560,120,30,400);
+    l6_wall_rect[6] = l6_make_rect(560,120,30,280);      //stops short: the gap at y 400-520 joins the two halves
     l6_wall_rect[7] = l6_make_rect(70,330,300,30);        //a shelf of a wall inside it
 
     //the library, middle

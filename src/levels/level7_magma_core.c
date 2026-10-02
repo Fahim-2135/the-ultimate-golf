@@ -7,8 +7,8 @@
 int l7_width = 1920;
 int l7_height = 1080;
 float l7_u = 1;
-int l7_stroke_base = 20;
-int l7_stroke_limit = 20;
+int l7_stroke_base = 18;
+int l7_stroke_limit = 18;
 #define l7_max_speed 650
 
 //colours
@@ -60,10 +60,10 @@ Rectangle l7_crust[3];
 float l7_crust_clock[3];
 
 //cracked bridges over the lake
-Rectangle l7_plank[2][6];
-int l7_plank_count[2] = {6,6};
-int l7_plank_state[2][6];
-float l7_plank_timer[2][6];
+Rectangle l7_plank[2][7];
+int l7_plank_count[2] = {6,7};
+int l7_plank_state[2][7];
+float l7_plank_timer[2][7];
 
 //eruption vents: the hole is always deadly, and now and then it floods a circle around it
 Vector2 l7_vent[3];
@@ -130,35 +130,37 @@ void l7_reset_level()
     l7_radius_pot = 11*l7_u;
 
     //the descent: in at the bottom left, around the lake, down to the heart on the right
+    //every ledge touches the next one on the route; the only gaps are the ones that have a
+    //crossing of their own (the two bridges, the rafts, the tube and the geysers)
     l7_ledge[0] = l7_make_rect(60,840,420,190);     //the way in
-    l7_ledge[1] = l7_make_rect(60,560,260,280);     //first terrace
+    l7_ledge[1] = l7_make_rect(60,440,260,400);     //first terrace, up to the shelf
     l7_ledge[2] = l7_make_rect(60,180,420,260);     //the high shelf
     l7_ledge[3] = l7_make_rect(700,180,330,200);    //north terrace
-    l7_ledge[4] = l7_make_rect(700,560,330,210);    //middle island
+    l7_ledge[4] = l7_make_rect(700,560,330,300);    //middle island, down to the south one
     l7_ledge[5] = l7_make_rect(760,860,330,170);    //south island
-    l7_ledge[6] = l7_make_rect(1250,180,280,210);   //east terrace
-    l7_ledge[7] = l7_make_rect(1600,320,260,250);   //the drop to the heart
-    l7_ledge[8] = l7_make_rect(1380,640,480,220);   //the heart chamber
-    l7_ledge[9] = l7_make_rect(1120,420,180,160);   //the stepping stone in the middle
+    l7_ledge[6] = l7_make_rect(1250,180,280,260);   //east terrace
+    l7_ledge[7] = l7_make_rect(1490,330,370,250);   //the drop to the heart
+    l7_ledge[8] = l7_make_rect(1380,570,480,290);   //the heart chamber
+    l7_ledge[9] = l7_make_rect(1120,420,180,160);   //a stepping stone out in the lake
 
     //the lava starts just under the floor and climbs
     l7_lava_line = 1080*l7_u;
-    l7_lava_rise = 5.2*l7_u;
+    l7_lava_rise = 2.2*l7_u;
 
     //cooling crust, each on a different part of its cycle
-    l7_crust[0] = l7_make_rect(500,620,170,150);
-    l7_crust[1] = l7_make_rect(1080,840,160,150);
-    l7_crust[2] = l7_make_rect(1560,180,150,130);
+    l7_crust[0] = l7_make_rect(110,520,160,150);
+    l7_crust[1] = l7_make_rect(900,880,160,140);
+    l7_crust[2] = l7_make_rect(1300,200,150,130);
     l7_crust_clock[0] = 0;
     l7_crust_clock[1] = 2.2;
     l7_crust_clock[2] = 4;
 
     //two cracked bridges
     for (int i=0; i<6; i++) l7_plank[0][i] = l7_make_rect(480+i*37,250,37,120);
-    for (int i=0; i<6; i++) l7_plank[1][i] = l7_make_rect(1030+i*37,620,37,120);
+    for (int i=0; i<7; i++) l7_plank[1][i] = l7_make_rect(476+i*41,900,41,130);   //overlaps both banks: no gap to fall through
     for (int b=0; b<2; b++)
     {
-        for (int i=0; i<6; i++)
+        for (int i=0; i<7; i++)
         {
             l7_plank_state[b][i] = 0;
             l7_plank_timer[b][i] = 0;
@@ -168,9 +170,9 @@ void l7_reset_level()
     //the vents
     l7_vent_hole = 34*l7_u;
     l7_vent_reach = 150*l7_u;
-    l7_vent[0] = l7_make_point(250,700);
+    l7_vent[0] = l7_make_point(230,760);
     l7_vent[1] = l7_make_point(880,300);
-    l7_vent[2] = l7_make_point(1700,740);
+    l7_vent[2] = l7_make_point(1460,660);   //beside the heart, not on top of it
     for (int i=0; i<3; i++)
     {
         l7_vent_wait[i] = 6 + i*4.5;
@@ -179,9 +181,9 @@ void l7_reset_level()
     }
 
     //geysers: these throw, they do not push
-    l7_geyser[0] = l7_make_point(620,960);
+    l7_geyser[0] = l7_make_point(820,980);          //throws you up onto the middle island
     l7_geyser_kick[0] = l7_make_point(0,-620);
-    l7_geyser[1] = l7_make_point(1180,250);
+    l7_geyser[1] = l7_make_point(1300,340);         //and this one across to the heart side
     l7_geyser_kick[1] = l7_make_point(560,0);
     l7_geyser_clock[0] = 0;
     l7_geyser_clock[1] = 1.6;
@@ -191,9 +193,9 @@ void l7_reset_level()
     l7_raft_from[0] = 1040*l7_u;
     l7_raft_to[0] = 1230*l7_u;
     l7_raft_speed[0] = 120*l7_u;
-    l7_raft[1] = l7_make_rect(380,900,170,130);
-    l7_raft_from[1] = 380*l7_u;
-    l7_raft_to[1] = 700*l7_u;
+    l7_raft[1] = l7_make_rect(500,180,170,130);     //drifts the top gap, beside the bridge
+    l7_raft_from[1] = 490*l7_u;
+    l7_raft_to[1] = 690*l7_u;
     l7_raft_speed[1] = -140*l7_u;
 
     //the lava tube: from the middle island out onto the east terrace
@@ -212,10 +214,10 @@ void l7_reset_level()
 
     //crystals
     l7_crystal_radius = 30*l7_u;
-    l7_crystal[0] = l7_make_point(400,480);
-    l7_crystal[1] = l7_make_point(900,640);
-    l7_crystal[2] = l7_make_point(1460,300);
-    l7_crystal[3] = l7_make_point(1740,420);
+    l7_crystal[0] = l7_make_point(200,640);
+    l7_crystal[1] = l7_make_point(930,640);
+    l7_crystal[2] = l7_make_point(1460,290);
+    l7_crystal[3] = l7_make_point(1800,430);
     for (int i=0; i<4; i++) l7_crystal_hit[i] = 0;
 
     //the ceiling
@@ -326,7 +328,7 @@ void l7_update_obstacles(float dt)
 
     //the lava climbs, and never goes back down
     l7_lava_line = l7_lava_line - l7_lava_rise*dt;
-    if (l7_lava_line < 140*l7_u) l7_lava_line = 140*l7_u;
+    if (l7_lava_line < 800*l7_u) l7_lava_line = 800*l7_u;   //it stops below the heart: the level has to stay winnable
 
     //cooling crust: 4 seconds safe, 2 seconds deadly
     for (int i=0; i<3; i++)
@@ -342,7 +344,7 @@ void l7_update_obstacles(float dt)
         {
             if (l7_plank_state[b][i]==0) continue;
             l7_plank_timer[b][i] = l7_plank_timer[b][i] + dt;
-            if (l7_plank_state[b][i]==1 && l7_plank_timer[b][i]>=0.4)
+            if (l7_plank_state[b][i]==1 && l7_plank_timer[b][i]>=0.55)
             {
                 l7_plank_state[b][i] = 2;
                 l7_plank_timer[b][i] = 0;

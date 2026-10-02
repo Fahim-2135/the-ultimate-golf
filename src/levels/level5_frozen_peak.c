@@ -6,8 +6,8 @@
 int l5_width = 1920;
 int l5_height = 1080;
 float l5_u = 1;
-int l5_stroke_base = 22;
-int l5_stroke_limit = 22;
+int l5_stroke_base = 26;
+int l5_stroke_limit = 26;
 #define l5_max_speed 650
 
 //colours
@@ -64,7 +64,7 @@ Rectangle l5_plank[2][7];
 int l5_plank_count[2] = {5,7};
 int l5_plank_state[2][7];
 float l5_plank_timer[2][7];
-float l5_plank_crack_time[2] = {0.5,0.2};
+float l5_plank_crack_time[2] = {0.6,0.35};
 
 //the gondola carries the ball across
 Rectangle l5_gondola;
@@ -161,7 +161,7 @@ void l5_reset_level()
     //bridge 0: the top crossing, 5 planks between the shelf and the plateau
     for (int i=0; i<5; i++) l5_plank[0][i] = l5_make_rect(480+i*44,250,44,120);
     //bridge 1: the risky shortcut over the big crevasse, 7 planks, cracks fast
-    for (int i=0; i<7; i++) l5_plank[1][i] = l5_make_rect(1122+i*44,880,44,120);
+    for (int i=0; i<7; i++) l5_plank[1][i] = l5_make_rect(1116+i*45,880,45,120);   //overlaps both banks: no gap to fall through
     for (int b=0; b<2; b++)
     {
         for (int i=0; i<7; i++)
@@ -200,10 +200,10 @@ void l5_reset_level()
 
     //pines and campfires
     l5_pine_radius = 26*l5_u;
-    l5_pine[0] = l5_make_point(400,880);
+    l5_pine[0] = l5_make_point(430,990);
     l5_pine[1] = l5_make_point(240,370);
     l5_pine[2] = l5_make_point(1040,330);
-    l5_pine[3] = l5_make_point(770,960);
+    l5_pine[3] = l5_make_point(760,890);   //clear of the bridge mouth
     l5_pine[4] = l5_make_point(1560,300);
     l5_campfire_radius = 95*l5_u;
     l5_campfire[0] = l5_make_point(360,930);
@@ -321,13 +321,15 @@ void l5_update_obstacles(float dt)
     l5_wind_clock = l5_wind_clock + dt;
     int cycle = (int)(l5_wind_clock/12);
     float inside = l5_wind_clock - cycle*12;
-    if (inside<4) l5_wind_strength = 70;
-    else if (inside<8) l5_wind_strength = 170;
-    else l5_wind_strength = 290;
+    if (inside<4) l5_wind_strength = 35;
+    else if (inside<8) l5_wind_strength = 80;
+    else l5_wind_strength = 135;
     float facing = 1;
     if (cycle%2==1) facing = -1;
+    //the sideways push is the point; the up-down part is small and swings, so the wind
+    //cannot simply sweep every ball off the bottom of the mountain
     l5_wind.x = l5_wind_strength*facing*l5_u;
-    l5_wind.y = l5_wind_strength*0.25*l5_u;
+    l5_wind.y = l5_wind_strength*0.22*sin(l5_wind_clock*0.8)*l5_u;
 
     //at the peak of the gale the snow comes across and you cannot see much
     l5_whiteout = 0;
@@ -474,11 +476,11 @@ void l5_update_ball(float dt)
     int was_moving = 0;
     if (l5_speed.x!=0 || l5_speed.y!=0) was_moving = 1;
 
-    //the wind only pushes a ball that is already rolling, so a shot can still be lined up
-    if (was_moving==1)
+    //the wind only pushes a ball that is already rolling, so a shot can still be lined up.
+    //it must NOT count as a push, or friction could never bring the ball to a stop again.
+    if (was_moving==1 && Vector2Length(l5_speed)>30*l5_u)
     {
         l5_speed = Vector2Add(l5_speed,Vector2Scale(l5_wind,dt));
-        pushed = 1;
     }
 
     //riding the gondola: the cabin carries the ball along with it

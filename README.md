@@ -1,6 +1,6 @@
 # The Ultimate Golf
 
-A 2D mini-golf game in C with [raylib](https://www.raylib.com/). Four hand-built courses, each with its own world and its own set of traps: a foundry, a shoreline, a black hole, and a temple in the jungle.
+A 2D mini-golf game in C with [raylib](https://www.raylib.com/). Seven hand-built courses, each with its own world and its own set of traps: a foundry, a shoreline, a black hole, a temple in the jungle, a mountain in a gale, a dark manor and an erupting volcano.
 
 Drag back from the ball, let go, and try to reach the hole before your strokes run out.
 
@@ -12,20 +12,23 @@ Right-click the zip, **Extract All**, then run the exe from the folder it makes.
 
 ---
 
-## The four levels
+## The seven levels
 
 | | |
 |---|---|
 | ![Foundry](screenshots/level1_foundry.png) **1 — Foundry** <br> Conveyor belts, a hydraulic piston, a laser gate, a magnet and a molten pit. | ![Shoreline](screenshots/level2_shoreline.png) **2 — Shoreline** <br> A tide that floods half the course every 8 seconds, rip currents, whirlpools and crabs. |
 | ![Event Horizon](screenshots/level3_event_horizon.png) **3 — Event Horizon** <br> Gravity wells, one-way wormholes, a spinning satellite, and a UFO that can abduct the ball. | ![Lost Temple](screenshots/level4_lost_temple.png) **4 — Lost Temple** <br> Crumbling plank bridges, quicksand, dart traps, pressure plates and sliding stone doors. |
+| ![Frozen Peak](screenshots/level5_frozen_peak.png) **5 — Frozen Peak** <br> Wind across the whole mountain, black ice, a snowball that grows as it rolls, and one avalanche. | ![Haunted Manor](screenshots/level6_haunted_manor.png) **6 — Haunted Manor** <br> You see only what your light reaches. Candles you roll over stay lit, so the house opens up as you spend strokes. |
+| ![Magma Core](screenshots/level7_magma_core.png) **7 — Magma Core** <br> The lava rises the whole time and never falls back. Geysers throw the ball, vents erupt, and the hole only opens between eruptions. | ![The second page](screenshots/menu_page2.png) **The menu** <br> Levels 1-4 on the first page, 5-7 on the second. Every card is the real level, still running. |
 
 ## What's in it
 
-- **Four full courses**, roughly 45 different obstacles between them
+- **Seven full courses**, around 80 different obstacles between them
 - **Three difficulties** — Bot, Chad and Goat — which change the stroke limit, how fast the obstacles move, and how much of an aim line you get
 - **A briefing before every level** that names and shows every obstacle in it, with live pictures taken from the running level
+- **A menu of live cards**, two pages, every level drawing itself into its card every frame
 - **Scoring and a local leaderboard**, saved to `scores.txt` and kept between sessions
-- **An animated intro** that runs all four levels as its backdrop
+- **An animated intro** that runs the first four levels as its backdrop
 - **30 sound effects and per-level ambience**, with a mute switch that works from any screen
 - Everything is drawn by raylib or from sprites — no game engine, no physics library
 
