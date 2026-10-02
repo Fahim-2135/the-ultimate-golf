@@ -1111,6 +1111,14 @@ void l6_draw_ball_and_pot()
     DrawCircleV(l6_pot,l6_radius_pot+3*l6_u,Fade(BLACK,0.6));
     DrawCircleV(l6_pot,l6_radius_pot,BLACK);
     DrawCircleLines(l6_pot.x,l6_pot.y,l6_radius_pot,Fade(l6_crypt_green,0.8));
+    //a flag on the crypt, the same marker every other level puts on its hole
+    Vector2 pole_top = {l6_pot.x,l6_pot.y-62*l6_u};
+    DrawLineEx(l6_pot,pole_top,3*l6_u,Fade(l6_gold,0.9));
+    for (int i=0; i<5; i++)
+    {
+        float wave = sin(l6_animation_time*6 - i*0.8)*2.5*l6_u;
+        DrawRectangle(l6_pot.x+1*l6_u+i*6*l6_u,pole_top.y+wave,6*l6_u,18*l6_u,Fade(l6_crypt_green,0.95));
+    }
 
     DrawCircleV(l6_ball,l6_radius_ball,WHITE);
     DrawCircleLines(l6_ball.x,l6_ball.y,l6_radius_ball,GRAY);

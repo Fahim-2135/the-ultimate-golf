@@ -34,10 +34,7 @@ Texture2D l7_heart_texture;
 Texture2D l7_geyser_texture;
 Texture2D l7_crystal_texture;
 Texture2D l7_raft_texture;
-Texture2D l7_bubble_texture;
 Texture2D l7_salamander_texture;
-Texture2D l7_smoke_texture;
-Texture2D l7_pumice_texture;
 Texture2D l7_lavafall_texture;
 
 //ball and pot
@@ -112,24 +109,18 @@ float l7_crystal_hit[4];
 
 //--- the lake is never still ---
 //bubbles swell and pop all over the lava, each on its own clock
-Vector2 l7_bubble[7];
-float l7_bubble_stage[7];
-float l7_bubble_wait[7];
 
 //salamanders skitter along the ledges: harmless, but always moving
 Vector2 l7_salamander[3];
+float l7_salamander_radius;
 Vector2 l7_salamander_from[3];
 Vector2 l7_salamander_to[3];
 float l7_salamander_travel[3];
 float l7_salamander_speed[3];
 
 //smoke plumes drifting up off the hot spots
-Vector2 l7_smoke[4];
-float l7_smoke_stage[4];
 
 //pumice bobbing on the lake, and a lava fall pouring down one wall
-Vector2 l7_pumice[4];
-float l7_pumice_bob[4];
 Rectangle l7_lavafall;
 float l7_lavafall_clock = 0;     //2.5 seconds pouring, 2.5 seconds dry: a curtain to time
 
@@ -262,16 +253,9 @@ void l7_reset_level()
     l7_shower_x = 0;
     l7_heart_open = 0;
 
-    //bubbles pop in the lake, in the gaps between terraces
-    float bubble_spot[7][2] = {{320,240},{880,410},{1300,240},{560,580},{1480,750},{760,750},{1150,580}};
-    for (int i=0; i<7; i++)
-    {
-        l7_bubble[i] = l7_make_point(bubble_spot[i][0],bubble_spot[i][1]);
-        l7_bubble_stage[i] = 0;
-        l7_bubble_wait[i] = 0.4 + i*0.55;
-    }
-
-    //salamanders run three of the terraces
+    //salamanders patrol three of the terraces and shoulder the ball aside, the same
+    //way the ibex do up on the peak. Nothing on this level is only scenery.
+    l7_salamander_radius = 22*l7_u;
     l7_salamander_from[0] = l7_make_point(300,160);
     l7_salamander_to[0] = l7_make_point(1100,160);
     l7_salamander_speed[0] = 0.26;
@@ -287,19 +271,6 @@ void l7_reset_level()
         l7_salamander[i] = l7_salamander_from[i];
     }
 
-    //smoke off the lake
-    l7_smoke[0] = l7_make_point(700,240);
-    l7_smoke[1] = l7_make_point(1500,410);
-    l7_smoke[2] = l7_make_point(400,750);
-    l7_smoke[3] = l7_make_point(1250,580);
-    for (int i=0; i<4; i++) l7_smoke_stage[i] = i*0.9;
-
-    //pumice bobbing in the lake
-    l7_pumice[0] = l7_make_point(1100,240);
-    l7_pumice[1] = l7_make_point(300,410);
-    l7_pumice[2] = l7_make_point(1620,580);
-    l7_pumice[3] = l7_make_point(560,910);
-    for (int i=0; i<4; i++) l7_pumice_bob[i] = i*1.3;
 
     //the lava fall pours across terrace 4, on for 2.5 seconds, off for 2.5
     l7_lavafall = l7_make_rect(600,610,110,120);
@@ -411,25 +382,6 @@ void l7_update_obstacles(float dt)
     l7_lavafall_clock = l7_lavafall_clock + dt;
     if (l7_lavafall_clock>=5) l7_lavafall_clock = l7_lavafall_clock - 5;
 
-    //bubbles: a wait, then swell and pop
-    for (int i=0; i<7; i++)
-    {
-        if (l7_bubble_stage[i]>0)
-        {
-            l7_bubble_stage[i] = l7_bubble_stage[i] + dt;
-            if (l7_bubble_stage[i]>1.2)
-            {
-                l7_bubble_stage[i] = 0;
-                l7_bubble_wait[i] = 1.4 + GetRandomValue(0,30)/10.0;
-            }
-        }
-        else
-        {
-            l7_bubble_wait[i] = l7_bubble_wait[i] - dt;
-            if (l7_bubble_wait[i]<=0) l7_bubble_stage[i] = 0.0001;
-        }
-    }
-
     //salamanders
     for (int i=0; i<3; i++)
     {
@@ -440,15 +392,6 @@ void l7_update_obstacles(float dt)
         l7_salamander[i] = Vector2Lerp(l7_salamander_from[i],l7_salamander_to[i],t);
     }
 
-    //smoke rises, thins, and starts again
-    for (int i=0; i<4; i++)
-    {
-        l7_smoke_stage[i] = l7_smoke_stage[i] + dt*0.55;
-        if (l7_smoke_stage[i]>3) l7_smoke_stage[i] = 0;
-    }
-
-    //pumice bobs
-    for (int i=0; i<4; i++) l7_pumice_bob[i] = l7_pumice_bob[i] + dt*1.4;
 
     //cooling crust: 4 seconds safe, 2 seconds deadly
     for (int i=0; i<3; i++)
@@ -761,6 +704,19 @@ void l7_update_ball(float dt)
         l7_bounce_off_rectangle(l7_raft[i],raft_speed);
     }
 
+    //salamanders shoulder the ball out of their way
+    for (int i=0; i<3; i++)
+    {
+        if (Vector2Distance(l7_ball,l7_salamander[i]) < l7_salamander_radius+l7_radius_ball)
+        {
+            Vector2 away = Vector2Subtract(l7_ball,l7_salamander[i]);
+            if (Vector2Length(away)<1) away = l7_make_point(0,1);
+            away = Vector2Normalize(away);
+            l7_ball = Vector2Add(l7_salamander[i],Vector2Scale(away,l7_salamander_radius+l7_radius_ball));
+            l7_speed = Vector2ClampValue(Vector2Add(l7_speed,Vector2Scale(away,170*l7_u)),0,l7_max_speed*l7_u);
+        }
+    }
+
     //the heart, open only while the vent beside it is quiet
     if (l7_heart_open>0 && (l7_ball.x>l7_pot.x-3*l7_radius_pot/4) && (l7_ball.x<l7_pot.x+3*l7_radius_pot/4) && (l7_ball.y>l7_pot.y-3*l7_radius_pot/4) && (l7_ball.y<l7_pot.y+3*l7_radius_pot/4))
     {
@@ -875,31 +831,9 @@ void l7_draw_ground()
         DrawTexturePro(l7_raft_texture,source,l7_raft[i],no_origin,0,WHITE);
     }
 
-    //pumice bobbing on the lake
-    for (int i=0; i<4; i++)
-    {
-        float bob = sin(l7_pumice_bob[i])*6*l7_u;
-        Rectangle source = {(i%3)*256,0,256,256};
-        Rectangle dest = {l7_pumice[i].x,l7_pumice[i].y+bob,90*l7_u,90*l7_u};
-        Vector2 origin = {45*l7_u,45*l7_u};
-        DrawTexturePro(l7_pumice_texture,source,dest,origin,i*31,WHITE);
-    }
-
-    //bubbles swelling and popping all over the lava
-    for (int i=0; i<7; i++)
-    {
-        if (l7_bubble_stage[i]<=0) continue;
-        int frame = (int)(l7_bubble_stage[i]/1.2*4);
-        if (frame>3) frame = 3;
-        Rectangle source = {frame*256,0,256,256};
-        Rectangle dest = {l7_bubble[i].x,l7_bubble[i].y,120*l7_u,120*l7_u};
-        Vector2 origin = {60*l7_u,60*l7_u};
-        DrawTexturePro(l7_bubble_texture,source,dest,origin,0,WHITE);
-    }
-
     //the lava fall: a curtain pouring across the middle terrace, with a glow either side
     int fall_frame = (int)(l7_animation_time*10)%4;
-    Rectangle fall_source = {(fall_frame%2)*512,0,512,512};
+    Rectangle fall_source = {fall_frame*256,0,256,512};
     Vector2 no_origin_fall = {0,0};
     if (l7_lavafall_clock<2.5)
     {
@@ -1046,23 +980,12 @@ void l7_draw_obstacles()
     {
         int frame = (int)(l7_animation_time*12+i)%4;
         Rectangle source = {frame*128,0,128,128};
-        Rectangle dest = {l7_salamander[i].x,l7_salamander[i].y,62*l7_u,62*l7_u};
-        Vector2 origin = {31*l7_u,31*l7_u};
+        float size = l7_salamander_radius*2.4;
+        Rectangle dest = {l7_salamander[i].x,l7_salamander[i].y,size,size};
+        Vector2 origin = {size/2,size/2};
         float facing = 90;
         if (l7_salamander_travel[i]>1) facing = -90;
         DrawTexturePro(l7_salamander_texture,source,dest,origin,facing,WHITE);
-    }
-
-    //smoke drifting off the hot spots
-    for (int i=0; i<4; i++)
-    {
-        int frame = (int)(l7_smoke_stage[i]/3*4);
-        if (frame>3) frame = 3;
-        float lift = l7_smoke_stage[i]*40*l7_u;
-        Rectangle source = {frame*256,0,256,256};
-        Rectangle dest = {l7_smoke[i].x+lift*0.3,l7_smoke[i].y-lift,220*l7_u,220*l7_u};
-        Vector2 origin = {110*l7_u,110*l7_u};
-        DrawTexturePro(l7_smoke_texture,source,dest,origin,0,Fade(WHITE,0.7));
     }
 
     //crystals
@@ -1089,8 +1012,28 @@ void l7_draw_ball_and_pot()
     Rectangle heart_source = {heart_frame*512,0,512,512};
     Rectangle heart_dest = {l7_pot.x,l7_pot.y,basin,basin};
     Vector2 heart_origin = {basin/2,basin/2};
-    if (l7_heart_open>0) DrawCircleGradient(l7_pot,basin*0.75,Fade(l7_lava,0.35),BLANK);
+    //a beacon, the same idea as the altar in the temple: a halo, a turning ring and a
+    //flag on a pole, so the end of the course is obvious from the other side of the screen
+    float t = l7_animation_time;
+    DrawCircleGradient(l7_pot,basin*2.6,Fade(l7_lava,0.30+0.10*sin(t*2)),BLANK);
+    DrawCircleGradient(l7_pot,basin*1.3,Fade(l7_ember,0.25+0.08*sin(t*2)),BLANK);
     DrawTexturePro(l7_heart_texture,heart_source,heart_dest,heart_origin,0,WHITE);
+    DrawRing(l7_pot,basin*0.62,basin*0.68,t*40,t*40+300,48,Fade(l7_ember,0.8));
+    for (int j=0; j<6; j++)
+    {
+        Vector2 arm = {basin*0.8,0};
+        Vector2 sparkle = Vector2Add(l7_pot,Vector2Rotate(arm,(t*50+j*60)*DEG2RAD));
+        DrawCircleV(sparkle,(2+sin(t*5+j))*l7_u,l7_lava_hot);
+    }
+
+    //the flag
+    Vector2 pole_top = {l7_pot.x,l7_pot.y-48*l7_u};
+    DrawLineEx(l7_pot,pole_top,3*l7_u,l7_rock_light);
+    for (int i=0; i<5; i++)
+    {
+        float wave = sin(t*6 - i*0.8)*2.5*l7_u;
+        DrawRectangle(l7_pot.x+1*l7_u+i*6*l7_u,pole_top.y+wave,6*l7_u,18*l7_u,l7_lava);
+    }
 
     DrawCircleV(l7_ball,l7_radius_ball,WHITE);
     DrawCircleLines(l7_ball.x,l7_ball.y,l7_radius_ball,GRAY);
@@ -1258,10 +1201,7 @@ void l7_start(int screen_width, int screen_height)
     l7_geyser_texture = LoadTexture("assets/magma/magma_geyser.png");
     l7_crystal_texture = LoadTexture("assets/magma/magma_crystal.png");
     l7_raft_texture = LoadTexture("assets/magma/magma_raft.png");
-    l7_bubble_texture = LoadTexture("assets/magma/magma_bubble.png");
     l7_salamander_texture = LoadTexture("assets/magma/magma_salamander.png");
-    l7_smoke_texture = LoadTexture("assets/magma/magma_smoke.png");
-    l7_pumice_texture = LoadTexture("assets/magma/magma_pumice.png");
     l7_lavafall_texture = LoadTexture("assets/magma/magma_lavafall.png");
     SetTextureWrap(l7_rock_texture,TEXTURE_WRAP_REPEAT);
     SetTextureWrap(l7_lava_texture,TEXTURE_WRAP_REPEAT);
@@ -1277,10 +1217,7 @@ void l7_start(int screen_width, int screen_height)
     SetTextureFilter(l7_geyser_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l7_crystal_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l7_raft_texture,TEXTURE_FILTER_BILINEAR);
-    SetTextureFilter(l7_bubble_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l7_salamander_texture,TEXTURE_FILTER_BILINEAR);
-    SetTextureFilter(l7_smoke_texture,TEXTURE_FILTER_BILINEAR);
-    SetTextureFilter(l7_pumice_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l7_lavafall_texture,TEXTURE_FILTER_BILINEAR);
 
     l7_u = l7_height/1080.0;
@@ -1350,9 +1287,6 @@ void l7_unload()
     UnloadTexture(l7_geyser_texture);
     UnloadTexture(l7_crystal_texture);
     UnloadTexture(l7_raft_texture);
-    UnloadTexture(l7_bubble_texture);
     UnloadTexture(l7_salamander_texture);
-    UnloadTexture(l7_smoke_texture);
-    UnloadTexture(l7_pumice_texture);
     UnloadTexture(l7_lavafall_texture);
 }

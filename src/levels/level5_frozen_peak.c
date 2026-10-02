@@ -33,7 +33,6 @@ Texture2D l5_bridge_texture;
 Texture2D l5_campfire_texture;
 Texture2D l5_icicle_texture;
 Texture2D l5_ibex_texture;
-Texture2D l5_hare_texture;
 Texture2D l5_flags_texture;
 Texture2D l5_toboggan_texture;
 Texture2D l5_crate_texture;
@@ -112,16 +111,12 @@ float l5_wind_strength = 0;
 float l5_whiteout = 0;
 
 //--- the mountain's own life: these keep the screen busy, most of them harmless ---
-//ibex wander their ledge and nudge the ball, hares just hop about
+//ibex wander their ledge and nudge the ball
 Vector2 l5_ibex[3];
 float l5_ibex_from[3];
 float l5_ibex_to[3];
 float l5_ibex_speed[3];
 float l5_ibex_radius;
-Vector2 l5_hare[4];
-float l5_hare_home[4][2];
-float l5_hare_hop[4];
-float l5_hare_rest[4];
 
 //strings of prayer flags: they lean with the wind, so they are the gauge you read
 Vector2 l5_flagline[3];
@@ -138,7 +133,8 @@ Rectangle l5_crate[3];
 Vector2 l5_boulder[4];
 float l5_boulder_radius;
 float l5_boulder_hit[4];
-Vector2 l5_sign[3];
+Vector2 l5_sign[5];
+int l5_sign_facing[5];        //1 the next climb is to the right, -1 to the left
 
 //blowing snow drawn in bands across the course, and the plumes off the ridges
 float l5_drift_offset = 0;
@@ -286,18 +282,6 @@ void l5_reset_level()
     l5_ibex_to[2] = 1300*l5_u;
     l5_ibex_speed[2] = 105*l5_u;
 
-    //hares off at the ends, pure scenery
-    l5_hare_home[0][0] = 140; l5_hare_home[0][1] = 1040;
-    l5_hare_home[1][0] = 1800; l5_hare_home[1][1] = 870;
-    l5_hare_home[2][0] = 120; l5_hare_home[2][1] = 700;
-    l5_hare_home[3][0] = 1810; l5_hare_home[3][1] = 150;
-    for (int i=0; i<4; i++)
-    {
-        l5_hare[i] = l5_make_point(l5_hare_home[i][0],l5_hare_home[i][1]);
-        l5_hare_hop[i] = 0;
-        l5_hare_rest[i] = 1 + i*0.7;
-    }
-
     //flag lines hang over the gaps between lanes, where they are easy to read
     l5_flagline[0] = l5_make_point(500,895);
     l5_flagline_width[0] = 420*l5_u;
@@ -324,10 +308,13 @@ void l5_reset_level()
 
     for (int i=0; i<4; i++) l5_boulder_hit[i] = 0;
 
-    //a signpost at every turn
-    l5_sign[0] = l5_make_point(1620,985);
-    l5_sign[1] = l5_make_point(480,815);
-    l5_sign[2] = l5_make_point(1620,645);
+    //a signpost planted at the edge of every lane, pointing at the climb you want next.
+    //They are the one thing here whose whole job is telling you where to go.
+    l5_sign[0] = l5_make_point(1450,1040); l5_sign_facing[0] = 1;    //A -> the right bridge
+    l5_sign[1] = l5_make_point(560,866);   l5_sign_facing[1] = -1;   //B -> the left ramp
+    l5_sign[2] = l5_make_point(1300,696);  l5_sign_facing[2] = 1;    //C -> the right ramp
+    l5_sign[3] = l5_make_point(620,526);   l5_sign_facing[3] = -1;   //D -> the left bridge
+    l5_sign[4] = l5_make_point(1300,356);  l5_sign_facing[4] = 1;    //E -> the right ramp
     l5_drift_offset = 0;
 
     //ball and pot: the whole climb apart
@@ -463,29 +450,6 @@ void l5_update_obstacles(float dt)
         {
             l5_ibex[i].x = l5_ibex_to[i];
             l5_ibex_speed[i] = -fabsf(l5_ibex_speed[i]);
-        }
-    }
-
-    //hares: a rest, then a hop a little way, then a rest again
-    for (int i=0; i<4; i++)
-    {
-        if (l5_hare_hop[i]>0)
-        {
-            l5_hare_hop[i] = l5_hare_hop[i] - dt;
-            l5_hare[i].x = l5_hare[i].x + sin(i*2.1)*90*l5_u*dt;
-            l5_hare[i].y = l5_hare[i].y + cos(i*1.7)*70*l5_u*dt;
-            if (l5_hare_hop[i]<=0) l5_hare_rest[i] = 1.2 + GetRandomValue(0,25)/10.0;
-        }
-        else
-        {
-            l5_hare_rest[i] = l5_hare_rest[i] - dt;
-            if (l5_hare_rest[i]<=0)
-            {
-                l5_hare_hop[i] = 0.5;
-                //never let one wander off its patch
-                Vector2 home = l5_make_point(l5_hare_home[i][0],l5_hare_home[i][1]);
-                if (Vector2Distance(l5_hare[i],home)>120*l5_u) l5_hare[i] = home;
-            }
         }
     }
 
@@ -872,31 +836,63 @@ void l5_draw_ground()
         DrawRectangleLinesEx(l5_black_ice[i],2*l5_u,Fade(l5_ice_light,0.5));
     }
 
-    //deep powder
+    //deep powder: heaped snow you can stop in. Drawn as a bank of drifts rather than a
+    //pale panel, so it reads as ground and not as something stuck on top of the course.
     for (int i=0; i<3; i++)
     {
         Rectangle r = l5_powder[i];
-        DrawRectangleRounded(r,0.25,8,Fade(WHITE,0.9));
-        for (int k=0; k<10; k++)
+        Vector2 middle = {r.x+r.width/2,r.y+r.height/2};
+        //the shadow it casts into the snow around it
+        DrawRectangleRounded((Rectangle){r.x-4*l5_u,r.y-4*l5_u,r.width+8*l5_u,r.height+8*l5_u},0.5,10,Fade(l5_snow_shade,0.45));
+        //five heaped mounds across it, so the edge is lumpy
+        for (int k=0; k<5; k++)
         {
-            float x = r.x + fmod(k*83*l5_u,r.width);
-            float y = r.y + fmod(k*57*l5_u,r.height);
-            DrawCircle(x,y,7*l5_u,Fade(l5_snow_shade,0.7));
+            float x = r.x + r.width*(0.14 + k*0.18);
+            float y = middle.y + sin(k*1.7)*r.height*0.16;
+            DrawCircleV((Vector2){x,y},r.height*0.44,Fade(WHITE,0.95));
+        }
+        DrawRectangleRounded((Rectangle){r.x+6*l5_u,r.y+6*l5_u,r.width-12*l5_u,r.height-12*l5_u},0.5,10,Fade(WHITE,0.95));
+        //wind ripples over the top
+        for (int k=0; k<4; k++)
+        {
+            float y = r.y + r.height*(0.22 + k*0.2);
+            DrawLineEx((Vector2){r.x+12*l5_u,y},(Vector2){r.x+r.width-12*l5_u,y+4*l5_u},2*l5_u,Fade(l5_snow_shade,0.55));
+        }
+        //and the footprints of whatever walked through it
+        for (int k=0; k<6; k++)
+        {
+            float x = r.x + 18*l5_u + k*(r.width-36*l5_u)/5;
+            float y = middle.y + sin(k*2.3)*r.height*0.2;
+            DrawCircleV((Vector2){x,y},5*l5_u,Fade(l5_snow_shade,0.7));
         }
     }
 
-    //drift pits: rings that turn, like the quicksand in the temple
+    //drift pits: a hole in the snow that swallows a ball that stops in it. It has to look
+    //like a hole, so it is a dark throat with a lip of blown snow around it.
     for (int i=0; i<2; i++)
     {
         Rectangle r = l5_drift[i];
         Vector2 middle = {r.x+r.width/2,r.y+r.height/2};
-        DrawRectangleRounded(r,0.4,8,Fade(l5_snow_shade,0.95));
-        for (int k=0; k<4; k++)
+        float wide = r.width/2;
+        float tall = r.height/2;
+        //the lip: blown snow heaped around the mouth
+        for (int k=0; k<10; k++)
         {
-            float radius = 14*l5_u + k*14*l5_u;
-            float turn = l5_animation_time*30;
+            float a = k*0.628;
+            Vector2 lip = {middle.x+cos(a)*wide*0.92,middle.y+sin(a)*tall*0.92};
+            DrawCircleV(lip,10*l5_u,Fade(WHITE,0.9));
+        }
+        //the throat, getting darker inward
+        DrawEllipse(middle.x,middle.y,wide*0.86,tall*0.86,Fade(l5_snow_shade,0.95));
+        DrawEllipse(middle.x,middle.y,wide*0.62,tall*0.62,Fade(l5_ice,0.85));
+        DrawEllipse(middle.x,middle.y,wide*0.36,tall*0.36,Fade(l5_crevasse,0.75));
+        //snow spiralling down it
+        for (int k=0; k<3; k++)
+        {
+            float radius = wide*(0.4 + k*0.2);
+            float turn = l5_animation_time*45;
             if (k%2==1) turn = -turn;
-            DrawRing(middle,radius,radius+3*l5_u,turn,turn+230,24,Fade(l5_ice,0.5));
+            DrawRing(middle,radius,radius+2*l5_u,turn,turn+200,24,Fade(WHITE,0.5));
         }
     }
 
@@ -987,11 +983,12 @@ void l5_draw_obstacles()
         Rectangle source = {0,0,256,256};
         DrawTexturePro(l5_crate_texture,source,l5_crate[i],no_origin,0,WHITE);
     }
-    for (int i=0; i<3; i++)
+    for (int i=0; i<5; i++)
     {
-        Rectangle source = {0,0,256,256};
-        Rectangle dest = {l5_sign[i].x,l5_sign[i].y,90*l5_u,90*l5_u};
-        Vector2 origin = {45*l5_u,45*l5_u};
+        //flipped when the way on is to the left, so the arrow always means something
+        Rectangle source = {0,0,256*l5_sign_facing[i],256};
+        Rectangle dest = {l5_sign[i].x,l5_sign[i].y,80*l5_u,80*l5_u};
+        Vector2 origin = {40*l5_u,40*l5_u};
         DrawTexturePro(l5_sign_texture,source,dest,origin,0,WHITE);
     }
 
@@ -1010,16 +1007,7 @@ void l5_draw_obstacles()
     Rectangle sled_source = {(l5_toboggan_speed>0 ? 256 : 0),0,256,256};
     DrawTexturePro(l5_toboggan_texture,sled_source,l5_toboggan,no_origin,0,WHITE);
 
-    //hares and ibex
-    for (int i=0; i<4; i++)
-    {
-        int frame = 0;
-        if (l5_hare_hop[i]>0) frame = 1 + (int)((0.5-l5_hare_hop[i])*8)%3;
-        Rectangle source = {frame*128,0,128,128};
-        Rectangle dest = {l5_hare[i].x,l5_hare[i].y,56*l5_u,56*l5_u};
-        Vector2 origin = {28*l5_u,28*l5_u};
-        DrawTexturePro(l5_hare_texture,source,dest,origin,0,WHITE);
-    }
+    //the ibex pacing their lanes
     for (int i=0; i<3; i++)
     {
         int frame = (int)(l5_animation_time*7+i)%4;
@@ -1086,17 +1074,23 @@ void l5_draw_weather()
         DrawTexturePro(l5_flags_texture,source,dest,origin,lean,WHITE);
     }
 
-    //bands of blowing snow, travelling with the wind
-    for (int band=0; band<4; band++)
+    //bands of blowing snow: they are the wind made visible, so they only show when
+    //there is wind, and the harder it blows the more of them you see
+    float blow = l5_wind_strength/135.0;
+    if (blow>1) blow = 1;
+    if (blow>0.05)
     {
-        int frame = (int)(l5_animation_time*9+band)%4;
-        Rectangle source = {frame*256,0,256,256};
-        float y = 120*l5_u + band*(l5_height-200*l5_u)/4;
-        float offset = fmod(l5_drift_offset*(0.6+band*0.2),l5_width);
-        for (int k=-1; k<=l5_width/(420*l5_u)+1; k++)
+        for (int band=0; band<4; band++)
         {
-            Rectangle dest = {offset + k*420*l5_u,y,420*l5_u,150*l5_u};
-            DrawTexturePro(l5_spindrift_texture,source,dest,no_origin_global,0,Fade(WHITE,0.55));
+            int frame = (int)(l5_animation_time*9+band)%4;
+            Rectangle source = {frame*256,0,256,256};
+            float y = 120*l5_u + band*(l5_height-200*l5_u)/4;
+            float offset = fmod(l5_drift_offset*(0.6+band*0.2),l5_width);
+            for (int k=-1; k<=l5_width/(420*l5_u)+1; k++)
+            {
+                Rectangle dest = {offset + k*420*l5_u,y,420*l5_u,150*l5_u};
+                DrawTexturePro(l5_spindrift_texture,source,dest,no_origin_global,0,Fade(WHITE,0.45*blow));
+            }
         }
     }
 
@@ -1243,7 +1237,6 @@ void l5_start(int screen_width, int screen_height)
     l5_campfire_texture = LoadTexture("assets/frozen/frozen_campfire.png");
     l5_icicle_texture = LoadTexture("assets/frozen/frozen_icicle.png");
     l5_ibex_texture = LoadTexture("assets/frozen/frozen_ibex.png");
-    l5_hare_texture = LoadTexture("assets/frozen/frozen_hare.png");
     l5_flags_texture = LoadTexture("assets/frozen/frozen_flags.png");
     l5_toboggan_texture = LoadTexture("assets/frozen/frozen_toboggan.png");
     l5_crate_texture = LoadTexture("assets/frozen/frozen_crate.png");
@@ -1261,7 +1254,6 @@ void l5_start(int screen_width, int screen_height)
     SetTextureFilter(l5_campfire_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_icicle_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_ibex_texture,TEXTURE_FILTER_BILINEAR);
-    SetTextureFilter(l5_hare_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_flags_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_toboggan_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_crate_texture,TEXTURE_FILTER_BILINEAR);
@@ -1339,7 +1331,6 @@ void l5_unload()
     UnloadTexture(l5_campfire_texture);
     UnloadTexture(l5_icicle_texture);
     UnloadTexture(l5_ibex_texture);
-    UnloadTexture(l5_hare_texture);
     UnloadTexture(l5_flags_texture);
     UnloadTexture(l5_toboggan_texture);
     UnloadTexture(l5_crate_texture);
