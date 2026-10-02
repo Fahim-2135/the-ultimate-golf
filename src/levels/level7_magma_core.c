@@ -126,6 +126,7 @@ float l7_smoke_stage[4];
 Vector2 l7_pumice[4];
 float l7_pumice_bob[4];
 Rectangle l7_lavafall;
+float l7_lavafall_clock = 0;     //2.5 seconds pouring, 2.5 seconds dry: a curtain to time
 
 //the rock shower: once or twice a game the ceiling gives way
 float l7_shower_wait = 0;
@@ -156,35 +157,34 @@ void l7_reset_level()
     l7_radius_ball = 7*l7_u;
     l7_radius_pot = 11*l7_u;
 
-    //the descent: in at the bottom left, around the lake, down to the heart on the right
-    //every ledge touches the next one on the route; the only gaps are the ones that have a
-    //crossing of their own (the two bridges, the rafts, the tube and the geysers)
-    l7_ledge[0] = l7_make_rect(60,840,420,190);     //the way in
-    l7_ledge[1] = l7_make_rect(60,440,260,400);     //first terrace, up to the shelf
-    l7_ledge[2] = l7_make_rect(60,180,420,260);     //the high shelf
-    l7_ledge[3] = l7_make_rect(700,180,330,200);    //north terrace
-    l7_ledge[4] = l7_make_rect(700,560,330,300);    //middle island, down to the south one
-    l7_ledge[5] = l7_make_rect(760,860,330,170);    //south island
-    l7_ledge[6] = l7_make_rect(1250,180,280,260);   //east terrace
-    l7_ledge[7] = l7_make_rect(1490,330,370,250);   //the drop to the heart
-    l7_ledge[8] = l7_make_rect(1380,570,480,290);   //the heart chamber
-    l7_ledge[9] = l7_make_rect(1120,420,180,160);   //a stepping stone out in the lake
+    //THE ROUTE IS A DESCENT, and it reads at a glance: along the top terrace to the
+    //right, down the right-hand bridge, back along the middle terrace, down the
+    //left-hand bridge, then right along the floor to the heart. The difficulty is
+    //timing the vents, the crust and the lava fall, not working out where to go.
+    l7_ledge[0] = l7_make_rect(60,150,1800,180);    //top terrace
+    l7_ledge[1] = l7_make_rect(1560,330,300,150);   //right landing
+    l7_ledge[2] = l7_make_rect(60,480,1800,180);    //middle terrace
+    l7_ledge[3] = l7_make_rect(60,660,320,150);     //left landing
+    l7_ledge[4] = l7_make_rect(60,810,1800,190);    //the floor, where the heart is
+    for (int i=5; i<10; i++) l7_ledge[i] = l7_make_rect(-400,-400,10,10);
 
-    //the lava starts just under the floor and climbs
+    //the lava climbs the screen and stops just under the floor, so you can see it
+    //coming for you without the level becoming unwinnable
     l7_lava_line = 1080*l7_u;
-    l7_lava_rise = 2.2*l7_u;
+    l7_lava_rise = 2.0*l7_u;
 
-    //cooling crust, each on a different part of its cycle
-    l7_crust[0] = l7_make_rect(110,520,160,150);
-    l7_crust[1] = l7_make_rect(900,880,160,140);
-    l7_crust[2] = l7_make_rect(1300,200,150,130);
+    //cooling crust: safe while grey, deadly while it glows. One per terrace, right on
+    //the line you want to take.
+    l7_crust[0] = l7_make_rect(620,170,150,140);
+    l7_crust[1] = l7_make_rect(980,500,150,140);
+    l7_crust[2] = l7_make_rect(760,830,150,140);
     l7_crust_clock[0] = 0;
     l7_crust_clock[1] = 2.2;
     l7_crust_clock[2] = 4;
 
-    //two cracked bridges
-    for (int i=0; i<6; i++) l7_plank[0][i] = l7_make_rect(480+i*37,250,37,120);
-    for (int i=0; i<7; i++) l7_plank[1][i] = l7_make_rect(476+i*41,900,41,130);   //overlaps both banks: no gap to fall through
+    //the two bridges down, both crumbling
+    for (int i=0; i<6; i++) l7_plank[0][i] = l7_make_rect(1596+i*46,330,46,160);
+    for (int i=0; i<7; i++) l7_plank[1][i] = l7_make_rect(96+i*41,660,41,160);
     for (int b=0; b<2; b++)
     {
         for (int i=0; i<7; i++)
@@ -194,67 +194,67 @@ void l7_reset_level()
         }
     }
 
-    //the vents
+    //vents: the holes are always deadly, and now and then they flood a circle
     l7_vent_hole = 34*l7_u;
-    l7_vent_reach = 150*l7_u;
-    l7_vent[0] = l7_make_point(230,760);
-    l7_vent[1] = l7_make_point(880,300);
-    l7_vent[2] = l7_make_point(1460,660);   //beside the heart, not on top of it
+    l7_vent_reach = 140*l7_u;
+    l7_vent[0] = l7_make_point(1080,240);
+    l7_vent[1] = l7_make_point(560,570);
+    l7_vent[2] = l7_make_point(1300,975);
     for (int i=0; i<3; i++)
     {
-        l7_vent_wait[i] = 6 + i*4.5;
+        l7_vent_wait[i] = 7 + i*4.5;
         l7_vent_stage[i] = 0;
         l7_vent_live[i] = 0;
     }
 
-    //geysers: these throw, they do not push
-    l7_geyser[0] = l7_make_point(820,980);          //throws you up onto the middle island
-    l7_geyser_kick[0] = l7_make_point(0,-620);
-    l7_geyser[1] = l7_make_point(1300,340);         //and this one across to the heart side
-    l7_geyser_kick[1] = l7_make_point(560,0);
+    //geysers throw you along the terrace, which is how you cover the long legs fast
+    l7_geyser[0] = l7_make_point(340,240);
+    l7_geyser_kick[0] = l7_make_point(560,0);
+    l7_geyser[1] = l7_make_point(1520,570);
+    l7_geyser_kick[1] = l7_make_point(-560,0);
     l7_geyser_clock[0] = 0;
     l7_geyser_clock[1] = 1.6;
 
-    //rafts across the lake
-    l7_raft[0] = l7_make_rect(1060,180,170,130);
-    l7_raft_from[0] = 1040*l7_u;
-    l7_raft_to[0] = 1230*l7_u;
-    l7_raft_speed[0] = 120*l7_u;
-    l7_raft[1] = l7_make_rect(500,180,170,130);     //drifts the top gap, beside the bridge
-    l7_raft_from[1] = 490*l7_u;
-    l7_raft_to[1] = 690*l7_u;
-    l7_raft_speed[1] = -140*l7_u;
+    //rafts drift in the lava between the terraces: pure scenery, nothing to land on
+    l7_raft[0] = l7_make_rect(500,350,170,120);
+    l7_raft_from[0] = 420*l7_u;
+    l7_raft_to[0] = 900*l7_u;
+    l7_raft_speed[0] = 90*l7_u;
+    l7_raft[1] = l7_make_rect(1100,690,170,120);
+    l7_raft_from[1] = 900*l7_u;
+    l7_raft_to[1] = 1400*l7_u;
+    l7_raft_speed[1] = -80*l7_u;
 
-    //the lava tube: from the middle island out onto the east terrace
-    l7_tube_in = l7_make_point(960,660);
-    l7_tube_out = l7_make_point(1300,250);
-    l7_tube_facing = 20;
+    //the lava tube: a shortcut from the middle terrace down to the floor
+    l7_tube_in = l7_make_point(1760,560);
+    l7_tube_out = l7_make_point(1600,900);
+    l7_tube_facing = 180;
     l7_tube_cooldown = 0;
 
-    //steam
-    l7_steam_jet[0] = l7_make_rect(320,180,160,260);
-    l7_steam_push[0] = l7_make_point(420,0);
-    l7_steam_jet[1] = l7_make_rect(1380,640,160,220);
-    l7_steam_push[1] = l7_make_point(0,-380);
+    //steam blows sideways across two spots
+    l7_steam_jet[0] = l7_make_rect(880,150,150,180);
+    l7_steam_push[0] = l7_make_point(0,420);
+    l7_steam_jet[1] = l7_make_rect(420,810,150,190);
+    l7_steam_push[1] = l7_make_point(420,0);
     l7_steam_clock[0] = 0;
     l7_steam_clock[1] = 1.8;
 
-    //crystals
+    //crystals: bumpers along the terraces
     l7_crystal_radius = 30*l7_u;
-    l7_crystal[0] = l7_make_point(200,640);
-    l7_crystal[1] = l7_make_point(930,640);
-    l7_crystal[2] = l7_make_point(1460,290);
-    l7_crystal[3] = l7_make_point(1800,430);
+    l7_crystal[0] = l7_make_point(1420,190);
+    l7_crystal[1] = l7_make_point(260,570);
+    l7_crystal[2] = l7_make_point(1180,570);
+    l7_crystal[3] = l7_make_point(1040,900);
     for (int i=0; i<4; i++) l7_crystal_hit[i] = 0;
 
-    //the ceiling
-    l7_shower_wait = 20;
+    l7_shower_wait = 22;
     l7_shower_state = 0;
     l7_shower_timer = 0;
     l7_shower_x = 0;
+    l7_heart_open = 0;
 
-    //bubbles, spread over the lake and started at different points of their cycle
-    float bubble_spot[7][2] = {{600,500},{1180,840},{560,760},{1250,560},{330,300},{1500,900},{640,160}};
+    //bubbles pop out in the lava, well away from the terraces
+    float bubble_spot[7][2] = {{300,400},{780,390},{1250,420},{520,720},{880,730},{1500,720},{1700,420}};
     for (int i=0; i<7; i++)
     {
         l7_bubble[i] = l7_make_point(bubble_spot[i][0],bubble_spot[i][1]);
@@ -262,48 +262,47 @@ void l7_reset_level()
         l7_bubble_wait[i] = 0.4 + i*0.55;
     }
 
-    //salamanders running their ledges
-    l7_salamander_from[0] = l7_make_point(90,900);
-    l7_salamander_to[0] = l7_make_point(430,900);
-    l7_salamander_speed[0] = 0.33;
-    l7_salamander_from[1] = l7_make_point(730,220);
-    l7_salamander_to[1] = l7_make_point(1000,330);
+    //salamanders run the terraces
+    l7_salamander_from[0] = l7_make_point(200,300);
+    l7_salamander_to[0] = l7_make_point(700,300);
+    l7_salamander_speed[0] = 0.3;
+    l7_salamander_from[1] = l7_make_point(700,630);
+    l7_salamander_to[1] = l7_make_point(1300,630);
     l7_salamander_speed[1] = 0.26;
-    l7_salamander_from[2] = l7_make_point(1430,820);
-    l7_salamander_to[2] = l7_make_point(1820,820);
-    l7_salamander_speed[2] = 0.3;
+    l7_salamander_from[2] = l7_make_point(1200,970);
+    l7_salamander_to[2] = l7_make_point(1800,970);
+    l7_salamander_speed[2] = 0.33;
     for (int i=0; i<3; i++)
     {
         l7_salamander_travel[i] = i*0.4;
         l7_salamander[i] = l7_salamander_from[i];
     }
 
-    //smoke
-    l7_smoke[0] = l7_make_point(250,620);
-    l7_smoke[1] = l7_make_point(900,420);
-    l7_smoke[2] = l7_make_point(1380,160);
-    l7_smoke[3] = l7_make_point(1620,760);
+    //smoke drifts up off the hot spots
+    l7_smoke[0] = l7_make_point(420,400);
+    l7_smoke[1] = l7_make_point(1150,400);
+    l7_smoke[2] = l7_make_point(700,730);
+    l7_smoke[3] = l7_make_point(1560,730);
     for (int i=0; i<4; i++) l7_smoke_stage[i] = i*0.9;
 
-    //pumice bobbing in the lake, well away from the ledges
-    l7_pumice[0] = l7_make_point(560,640);
-    l7_pumice[1] = l7_make_point(1180,760);
-    l7_pumice[2] = l7_make_point(620,130);
-    l7_pumice[3] = l7_make_point(1230,480);
+    //pumice bobbing out in the lake
+    l7_pumice[0] = l7_make_point(980,390);
+    l7_pumice[1] = l7_make_point(260,730);
+    l7_pumice[2] = l7_make_point(1420,390);
+    l7_pumice[3] = l7_make_point(1700,730);
     for (int i=0; i<4; i++) l7_pumice_bob[i] = i*1.3;
 
-    //the lava fall down the right wall
-    l7_lavafall = l7_make_rect(556,420,70,420);   //clear of the top bridge
+    //the lava fall pours straight across the middle terrace: a curtain to time
+    l7_lavafall = l7_make_rect(740,480,70,180);
+    l7_lavafall_clock = 0;
 
-    l7_heart_open = 0;
-
-    //ball and pot
-    l7_start_position = l7_make_point(140,920);
+    //ball and heart
+    l7_start_position = l7_make_point(150,240);
     l7_ball = l7_start_position;
     l7_last_shot_position = l7_start_position;
     l7_speed.x = 0;
     l7_speed.y = 0;
-    l7_pot = l7_make_point(1700,760);
+    l7_pot = l7_make_point(1740,900);
     l7_stroke = 0;
     l7_game_state = 0;
     l7_aiming = 0;
@@ -398,6 +397,10 @@ void l7_update_obstacles(float dt)
     //the lava climbs, and never goes back down
     l7_lava_line = l7_lava_line - l7_lava_rise*dt;
     if (l7_lava_line < 800*l7_u) l7_lava_line = 800*l7_u;   //it stops below the heart: the level has to stay winnable
+
+    //the lava fall pours, then stops, then pours again
+    l7_lavafall_clock = l7_lavafall_clock + dt;
+    if (l7_lavafall_clock>=5) l7_lavafall_clock = l7_lavafall_clock - 5;
 
     //bubbles: a wait, then swell and pop
     for (int i=0; i<7; i++)
@@ -684,6 +687,15 @@ void l7_update_ball(float dt)
         }
     }
 
+    //the lava fall itself: a curtain of lava across the terrace, but only while it pours
+    if (l7_lavafall_clock<2.5 && CheckCollisionPointRec(l7_ball,l7_lavafall))
+    {
+        l7_send_ball_back();
+        l7_message_type = 1;
+        l7_message_timer = 1;
+        return;
+    }
+
     //rocks coming down
     if (l7_shower_state==2 && fabsf(l7_ball.x-l7_shower_x)<120*l7_u)
     {
@@ -753,19 +765,38 @@ void l7_update_ball(float dt)
 
 void l7_draw_lake()
 {
-    //the lava lake under everything, two frames swapping so it creeps
+    //the lake, drawn small and DARK. At full brightness it drowns the whole screen and
+    //nothing else can be read on top of it.
     int frame = (int)(l7_animation_time*2)%2;
-    int columns = l7_width/(256*l7_u) + 1;
-    int rows = l7_height/(256*l7_u) + 1;
+    float tile = 170*l7_u;
+    int columns = l7_width/tile + 2;
+    int rows = l7_height/tile + 2;
     Vector2 no_origin = {0,0};
     for (int x=0; x<columns; x++)
     {
         for (int y=0; y<rows; y++)
         {
             Rectangle source = {frame*512,0,512,512};
-            Rectangle dest = {x*256*l7_u,y*256*l7_u,256*l7_u,256*l7_u};
-            DrawTexturePro(l7_lava_texture,source,dest,no_origin,0,WHITE);
+            Rectangle dest = {x*tile,y*tile,tile,tile};
+            DrawTexturePro(l7_lava_texture,source,dest,no_origin,0,GetColor(0x8A6048FF));
         }
+    }
+    //a dark wash and a vignette, so the middle is calm and the edges fall away
+    DrawRectangle(0,0,l7_width,l7_height,Fade(BLACK,0.42));
+    DrawRectangleGradientV(0,0,l7_width,220*l7_u,Fade(BLACK,0.55),BLANK);
+    DrawRectangleGradientV(0,l7_height-220*l7_u,l7_width,220*l7_u,BLANK,Fade(BLACK,0.55));
+    DrawRectangleGradientH(0,0,260*l7_u,l7_height,Fade(BLACK,0.5),BLANK);
+    DrawRectangleGradientH(l7_width-260*l7_u,0,260*l7_u,l7_height,BLANK,Fade(BLACK,0.5));
+
+    //embers rising off the lake, the slow background motion
+    for (int i=0; i<70; i++)
+    {
+        float speed = 30 + (i%5)*16;
+        float x = fmod(i*271*l7_u + sin(l7_animation_time*0.4+i)*40*l7_u,l7_width);
+        float y = l7_height - fmod(l7_animation_time*speed*l7_u + i*137*l7_u,l7_height+200*l7_u);
+        float fade = 0.5 - 0.4*(1 - y/l7_height);
+        if (fade<0) fade = 0;
+        DrawCircle(x,y,(2+(i%3))*l7_u,Fade(l7_ember,fade));
     }
 }
 
@@ -782,13 +813,19 @@ void l7_draw_ground()
 {
     l7_draw_lake();
 
-    //the ledges, each with a molten rim where it meets the lake
+    //the ledges: a hot halo, a molten rim, a dark lip, then the rock, then an inner
+    //shadow. Five thin layers are what make them sit ON the lake instead of in it.
     for (int i=0; i<10; i++)
     {
         Rectangle r = l7_ledge[i];
-        DrawRectangle(r.x-7*l7_u,r.y-7*l7_u,r.width+14*l7_u,r.height+14*l7_u,Fade(l7_lava,0.55));
-        DrawRectangle(r.x-3*l7_u,r.y-3*l7_u,r.width+6*l7_u,r.height+6*l7_u,l7_rock_dark);
+        if (r.x<0) continue;
+        DrawRectangle(r.x-18*l7_u,r.y-18*l7_u,r.width+36*l7_u,r.height+36*l7_u,Fade(l7_lava,0.16));
+        DrawRectangle(r.x-9*l7_u,r.y-9*l7_u,r.width+18*l7_u,r.height+18*l7_u,Fade(l7_lava,0.5));
+        DrawRectangle(r.x-4*l7_u,r.y-4*l7_u,r.width+8*l7_u,r.height+8*l7_u,l7_rock_dark);
         l7_draw_rock(r);
+        DrawRectangleGradientV(r.x,r.y,r.width,26*l7_u,Fade(BLACK,0.45),BLANK);
+        DrawRectangleGradientV(r.x,r.y+r.height-20*l7_u,r.width,20*l7_u,BLANK,Fade(BLACK,0.35));
+        DrawRectangleLinesEx(r,2*l7_u,Fade(l7_rock_light,0.5));
     }
 
     //the planks
@@ -851,11 +888,22 @@ void l7_draw_ground()
         DrawTexturePro(l7_bubble_texture,source,dest,origin,0,WHITE);
     }
 
-    //the lava fall down the right-hand wall
+    //the lava fall: a curtain pouring across the middle terrace, with a glow either side
     int fall_frame = (int)(l7_animation_time*10)%4;
     Rectangle fall_source = {fall_frame*256,0,256,512};
     Vector2 no_origin_fall = {0,0};
-    DrawTexturePro(l7_lavafall_texture,fall_source,l7_lavafall,no_origin_fall,0,WHITE);
+    if (l7_lavafall_clock<2.5)
+    {
+        DrawRectangle(l7_lavafall.x-16*l7_u,l7_lavafall.y,l7_lavafall.width+32*l7_u,l7_lavafall.height,Fade(l7_lava,0.3));
+        DrawTexturePro(l7_lavafall_texture,fall_source,l7_lavafall,no_origin_fall,0,WHITE);
+    }
+    else
+    {
+        //dry: the channel it pours down, and a warning as it builds again
+        DrawRectangleLinesEx(l7_lavafall,2*l7_u,Fade(l7_ember,0.45));
+        if (l7_lavafall_clock>4.2 && fmod(l7_animation_time*8,2)<1.2)
+            DrawRectangle(l7_lavafall.x,l7_lavafall.y,l7_lavafall.width,l7_lavafall.height,Fade(l7_lava,0.25));
+    }
 }
 
 

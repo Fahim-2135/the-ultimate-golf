@@ -172,37 +172,43 @@ void l5_reset_level()
     l5_radius_ball = 7*l5_u;
     l5_radius_pot = 11*l5_u;
 
-    //the climb: up the left side, across the top, down the middle, over the crevasse, up to the summit
-    l5_snow_ground[0] = l5_make_rect(60,780,420,250);     //base camp
-    l5_snow_ground[1] = l5_make_rect(150,420,200,380);    //left slope
-    l5_snow_ground[2] = l5_make_rect(60,180,420,250);     //glacier shelf
-    l5_snow_ground[3] = l5_make_rect(700,180,400,250);    //top plateau
-    l5_snow_ground[4] = l5_make_rect(820,420,160,440);    //the middle strip going down
-    l5_snow_ground[5] = l5_make_rect(700,850,420,180);    //lower station
-    l5_snow_ground[6] = l5_make_rect(1430,850,430,180);   //far station
-    l5_snow_ground[7] = l5_make_rect(1650,420,210,440);   //right slope
-    l5_snow_ground[8] = l5_make_rect(1400,160,460,270);   //the summit
+    //THE ROUTE IS A SNAKE, and it is meant to be obvious at a glance:
+    //  along the bottom lane to the right, up the right-hand bridge,
+    //  back along the middle lane to the left, up the left-hand ramp,
+    //  along the top lane to the right, and up onto the summit.
+    //Nothing here is a puzzle. The difficulty is the wind, the ice and the
+    //things crossing your line.
+    l5_snow_ground[0] = l5_make_rect(60,840,1800,200);    //bottom lane
+    l5_snow_ground[1] = l5_make_rect(1560,700,300,150);   //right landing, top of the bridge
+    l5_snow_ground[2] = l5_make_rect(60,540,1800,170);    //middle lane
+    l5_snow_ground[3] = l5_make_rect(60,380,320,170);     //left ramp up to the top lane
+    l5_snow_ground[4] = l5_make_rect(60,210,1360,180);    //top lane, stops short of the summit
+    l5_snow_ground[5] = l5_make_rect(1420,110,440,230);   //the summit, joined to the top lane
+    //the lanes are the course: no stray ledges floating in the crevasse to read as a maze
+    l5_snow_ground[6] = l5_make_rect(-400,-400,10,10);
+    l5_snow_ground[7] = l5_make_rect(-400,-400,10,10);
+    l5_snow_ground[8] = l5_make_rect(-400,-400,10,10);
 
-    //black ice: almost no friction, this is where the wind really hurts
-    l5_black_ice[0] = l5_make_rect(170,460,160,300);      //the left slope
-    l5_black_ice[1] = l5_make_rect(840,440,120,400);      //the middle strip
-    l5_black_ice[2] = l5_make_rect(1670,440,170,400);     //the right slope
-    l5_black_ice[3] = l5_make_rect(1430,200,300,120);     //the summit approach
+    //black ice: the long slippery stretches, one per lane, all plainly visible
+    l5_black_ice[0] = l5_make_rect(620,880,520,120);      //bottom lane
+    l5_black_ice[1] = l5_make_rect(300,570,620,110);      //middle lane
+    l5_black_ice[2] = l5_make_rect(820,240,560,120);      //top lane
+    l5_black_ice[3] = l5_make_rect(1430,150,330,120);     //the summit approach
 
-    //deep powder: kills the speed, a good place to stop
-    l5_powder[0] = l5_make_rect(80,200,180,140);
-    l5_powder[1] = l5_make_rect(960,880,150,130);
-    l5_powder[2] = l5_make_rect(1760,180,90,200);
+    //deep powder: brakes, right where you need them
+    l5_powder[0] = l5_make_rect(1300,880,180,130);
+    l5_powder[1] = l5_make_rect(120,570,150,110);
+    l5_powder[2] = l5_make_rect(1740,150,110,180);
 
-    //drift pits
-    l5_drift[0] = l5_make_rect(300,210,160,130);
-    l5_drift[1] = l5_make_rect(1480,890,170,120);
+    //drift pits, one on the bottom lane and one on the middle lane
+    l5_drift[0] = l5_make_rect(420,880,150,120);
+    l5_drift[1] = l5_make_rect(1180,560,160,120);
     l5_drift_timer = 0;
 
-    //bridge 0: the top crossing, 5 planks between the shelf and the plateau
-    for (int i=0; i<5; i++) l5_plank[0][i] = l5_make_rect(480+i*44,250,44,120);
-    //bridge 1: the risky shortcut over the big crevasse, 7 planks, cracks fast
-    for (int i=0; i<7; i++) l5_plank[1][i] = l5_make_rect(1116+i*45,880,45,120);   //overlaps both banks: no gap to fall through
+    //bridge 0: the right-hand climb, bottom lane up to the landing
+    for (int i=0; i<5; i++) l5_plank[0][i] = l5_make_rect(1640+i*44,700,44,150);
+    //bridge 1: the left-hand climb, middle lane up to the top lane
+    for (int i=0; i<7; i++) l5_plank[1][i] = l5_make_rect(96+i*40,380,40,170);
     for (int b=0; b<2; b++)
     {
         for (int i=0; i<7; i++)
@@ -212,100 +218,46 @@ void l5_reset_level()
         }
     }
 
-    //the gondola, the slow way over the same crevasse
-    l5_gondola = l5_make_rect(1110,250,150,100);
-    l5_gondola_left = 1110*l5_u;
-    l5_gondola_right = 1255*l5_u;
-    l5_gondola_speed = 150*l5_u;
+    //the gondola carries you over the one gap in the top lane
+    l5_gondola = l5_make_rect(400,560,190,140);
+    l5_gondola_left = 300*l5_u;
+    l5_gondola_right = 1480*l5_u;
+    l5_gondola_speed = -210*l5_u;
 
-    //the snowball rolls down the middle strip, growing as it goes
-    l5_snowball_from = l5_make_point(900,430);
-    l5_snowball_to = l5_make_point(900,860);
+    //the snowball rolls down the middle lane towards you, growing as it comes
+    l5_snowball_from = l5_make_point(1500,620);
+    l5_snowball_to = l5_make_point(400,620);
     l5_snowball_small = 16*l5_u;
-    l5_snowball_big = 48*l5_u;
+    l5_snowball_big = 46*l5_u;
     l5_snowball = l5_snowball_from;
     l5_snowball_radius = l5_snowball_small;
     l5_snowball_travel = 0;
     l5_snowball_wait = 0;
     l5_shatter_timer = 0;
 
-    //icicles over the top corridor
-    l5_icicle[0] = l5_make_point(780,186);
-    l5_icicle[1] = l5_make_point(930,186);
-    l5_icicle[2] = l5_make_point(1060,186);
+    //icicles hanging over the top lane
+    l5_icicle[0] = l5_make_point(480,216);
+    l5_icicle[1] = l5_make_point(780,216);
+    l5_icicle[2] = l5_make_point(1080,216);
     for (int i=0; i<3; i++)
     {
         l5_icicle_state[i] = 0;
         l5_icicle_fall[i] = 0;
     }
 
-    //pines and campfires
+    //pines stand BESIDE the lanes, never across them
     l5_pine_radius = 26*l5_u;
-    l5_pine[0] = l5_make_point(430,990);
-    l5_pine[1] = l5_make_point(240,370);
-    l5_pine[2] = l5_make_point(1040,330);
-    l5_pine[3] = l5_make_point(760,890);   //clear of the bridge mouth
-    l5_pine[4] = l5_make_point(1560,300);
+    l5_pine[0] = l5_make_point(240,1000);
+    l5_pine[1] = l5_make_point(980,1000);
+    l5_pine[2] = l5_make_point(1700,1000);
+    l5_pine[3] = l5_make_point(430,560);
+    l5_pine[4] = l5_make_point(1180,372);
+
+    //campfires: the three safe spots to stop and aim from, one per lane
     l5_campfire_radius = 95*l5_u;
-    l5_campfire[0] = l5_make_point(360,930);
-    l5_campfire[1] = l5_make_point(900,640);
-    l5_campfire[2] = l5_make_point(1760,700);
-
-    //ibex pacing their ledges
-    l5_ibex_radius = 26*l5_u;
-    l5_ibex[0] = l5_make_point(200,250);
-    l5_ibex_from[0] = 80*l5_u;
-    l5_ibex_to[0] = 430*l5_u;
-    l5_ibex_speed[0] = 70*l5_u;
-    l5_ibex[1] = l5_make_point(900,240);
-    l5_ibex_from[1] = 720*l5_u;
-    l5_ibex_to[1] = 1080*l5_u;
-    l5_ibex_speed[1] = -85*l5_u;
-    l5_ibex[2] = l5_make_point(1600,950);
-    l5_ibex_from[2] = 1450*l5_u;
-    l5_ibex_to[2] = 1840*l5_u;
-    l5_ibex_speed[2] = 95*l5_u;
-
-    //hares hopping on the spot, never in the way
-    l5_hare_home[0][0] = 140; l5_hare_home[0][1] = 860;
-    l5_hare_home[1][0] = 320; l5_hare_home[1][1] = 330;
-    l5_hare_home[2][0] = 1020; l5_hare_home[2][1] = 930;
-    l5_hare_home[3][0] = 1800; l5_hare_home[3][1] = 390;
-    for (int i=0; i<4; i++)
-    {
-        l5_hare[i] = l5_make_point(l5_hare_home[i][0],l5_hare_home[i][1]);
-        l5_hare_hop[i] = 0;
-        l5_hare_rest[i] = 1 + i*0.7;
-    }
-
-    //flag lines strung across the course
-    l5_flagline[0] = l5_make_point(90,760);
-    l5_flagline_width[0] = 330*l5_u;
-    l5_flagline[1] = l5_make_point(720,170);
-    l5_flagline_width[1] = 360*l5_u;
-    l5_flagline[2] = l5_make_point(1440,840);
-    l5_flagline_width[2] = 400*l5_u;
-
-    //the toboggan sliding the middle strip
-    l5_toboggan = l5_make_rect(840,560,110,150);
-    l5_toboggan_from = 430*l5_u;
-    l5_toboggan_to = 800*l5_u;
-    l5_toboggan_speed = 150*l5_u;
-
-    //crates, boulders, signs
-    l5_crate[0] = l5_make_rect(300,930,70,70);
-    l5_crate[1] = l5_make_rect(1000,230,70,70);
-    l5_crate[2] = l5_make_rect(1480,930,70,70);
-    l5_boulder_radius = 30*l5_u;
-    l5_boulder[0] = l5_make_point(140,520);
-    l5_boulder[1] = l5_make_point(980,300);
-    l5_boulder[2] = l5_make_point(1700,560);
-    l5_boulder[3] = l5_make_point(1520,250);
-    for (int i=0; i<4; i++) l5_boulder_hit[i] = 0;
-    l5_sign[0] = l5_make_point(430,820);
-    l5_sign[1] = l5_make_point(760,420);
-    l5_sign[2] = l5_make_point(1630,700);
-    l5_drift_offset = 0;
+    l5_campfire[0] = l5_make_point(880,960);
+    l5_campfire[1] = l5_make_point(1450,640);
+    l5_campfire[2] = l5_make_point(360,300);
 
     //the weather
     l5_wind_clock = 0;
@@ -313,19 +265,77 @@ void l5_reset_level()
     l5_wind.y = 0;
     l5_wind_strength = 0;
     l5_whiteout = 0;
-    l5_avalanche_wait = 24;
+    l5_avalanche_wait = 26;
     l5_avalanche_done = 0;
     l5_avalanche_state = 0;
     l5_avalanche_timer = 0;
     l5_avalanche_y = 0;
 
+    //ibex pace the lanes, so they cross your line without blocking the way
+    l5_ibex_radius = 26*l5_u;
+    l5_ibex[0] = l5_make_point(700,930);
+    l5_ibex_from[0] = 620*l5_u;
+    l5_ibex_to[0] = 1120*l5_u;
+    l5_ibex_speed[0] = 90*l5_u;
+    l5_ibex[1] = l5_make_point(900,620);
+    l5_ibex_from[1] = 700*l5_u;
+    l5_ibex_to[1] = 1150*l5_u;
+    l5_ibex_speed[1] = -105*l5_u;
+    l5_ibex[2] = l5_make_point(700,300);
+    l5_ibex_from[2] = 560*l5_u;
+    l5_ibex_to[2] = 1180*l5_u;
+    l5_ibex_speed[2] = 110*l5_u;
+
+    //hares sit off to the side
+    l5_hare_home[0][0] = 180; l5_hare_home[0][1] = 1000;
+    l5_hare_home[1][0] = 1760; l5_hare_home[1][1] = 1000;
+    l5_hare_home[2][0] = 160; l5_hare_home[2][1] = 690;
+    l5_hare_home[3][0] = 1800; l5_hare_home[3][1] = 290;
+    for (int i=0; i<4; i++)
+    {
+        l5_hare[i] = l5_make_point(l5_hare_home[i][0],l5_hare_home[i][1]);
+        l5_hare_hop[i] = 0;
+        l5_hare_rest[i] = 1 + i*0.7;
+    }
+
+    //flag lines strung over each lane: they lean with the wind you are about to fight
+    l5_flagline[0] = l5_make_point(300,860);
+    l5_flagline_width[0] = 380*l5_u;
+    l5_flagline[1] = l5_make_point(1000,556);
+    l5_flagline_width[1] = 380*l5_u;
+    l5_flagline[2] = l5_make_point(420,226);
+    l5_flagline_width[2] = 380*l5_u;
+
+    //the toboggan runs ACROSS the bottom lane, so it is a timing problem, not a maze
+    l5_toboggan = l5_make_rect(1180,850,110,150);
+    l5_toboggan_from = 850*l5_u;
+    l5_toboggan_to = 1000*l5_u;
+    l5_toboggan_speed = 170*l5_u;
+
+    //crates and boulders sit along the lanes as things to go round, not through
+    l5_crate[0] = l5_make_rect(600,950,70,70);
+    l5_crate[1] = l5_make_rect(1020,590,70,70);
+    l5_crate[2] = l5_make_rect(1180,218,70,70);
+    l5_boulder_radius = 30*l5_u;
+    l5_boulder[0] = l5_make_point(1480,900);
+    l5_boulder[1] = l5_make_point(640,620);
+    l5_boulder[2] = l5_make_point(360,370);
+    l5_boulder[3] = l5_make_point(1000,372);
+    for (int i=0; i<4; i++) l5_boulder_hit[i] = 0;
+
+    //signposts stand at the three turns, pointing the way
+    l5_sign[0] = l5_make_point(1760,950);
+    l5_sign[1] = l5_make_point(170,640);
+    l5_sign[2] = l5_make_point(1300,300);
+    l5_drift_offset = 0;
+
     //ball and pot
-    l5_start_position = l5_make_point(150,960);
+    l5_start_position = l5_make_point(150,940);
     l5_ball = l5_start_position;
     l5_last_shot_position = l5_start_position;
     l5_speed.x = 0;
     l5_speed.y = 0;
-    l5_pot = l5_make_point(1780,250);
+    l5_pot = l5_make_point(1800,230);
     l5_stroke = 0;
     l5_game_state = 0;
     l5_aiming = 0;
