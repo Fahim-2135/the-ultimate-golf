@@ -8,6 +8,8 @@ Same rules as `SPRITE-PROMPTS.md`: paste the global rules block once, then one p
 artboard, export at 2x, save under the exact filename. Nothing here replaces a file that
 already exists, so generating them cannot break anything that is already working.
 
+**All six are generated and wired in (2 October 2026). Kept here as the record of what was asked for.**
+
 | # | File | Folder | Artboard (1x) | Frames | What it replaces |
 |---|---|---|---|---|---|
 | 1 | `magma_eruption.png` | `assets/magma/` | 1024×256 | 4 | the lava flooding out of a vent |

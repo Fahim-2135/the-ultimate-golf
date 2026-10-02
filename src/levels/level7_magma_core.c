@@ -26,6 +26,11 @@ Texture2D l7_rock_texture;
 Texture2D l7_lava_texture;
 Texture2D l7_crust_texture;
 Texture2D l7_vent_texture;
+Texture2D l7_eruption_texture;
+Texture2D l7_steam_texture;
+Texture2D l7_catwalk_texture;
+Texture2D l7_tube_texture;
+Texture2D l7_heart_texture;
 Texture2D l7_geyser_texture;
 Texture2D l7_crystal_texture;
 Texture2D l7_raft_texture;
@@ -198,7 +203,7 @@ void l7_reset_level()
 
     //terrace 3 is the vents: three of them, far apart, with room to go round
     l7_vent_hole = 30*l7_u;
-    l7_vent_reach = 120*l7_u;
+    l7_vent_reach = 100*l7_u;
     l7_vent[0] = l7_make_point(520,455);
     l7_vent[1] = l7_make_point(980,545);
     l7_vent[2] = l7_make_point(1440,455);
@@ -841,22 +846,13 @@ void l7_draw_ground()
             Rectangle r = l7_plank[b][i];
             float shake = 0;
             if (l7_plank_state[b][i]==1) shake = sin(l7_animation_time*70)*3*l7_u;
-            Rectangle shown = {r.x+shake,r.y,r.width-4*l7_u,r.height};
-            //an iron grating: plate, rivets and a hot underside, so it reads as a catwalk
-            DrawRectangleRec(shown,GetColor(0x4A4650FF));
-            DrawRectangleLinesEx(shown,2*l7_u,l7_rock_dark);
-            for (int k=0; k<3; k++)
-            {
-                DrawRectangle(shown.x+4*l7_u,shown.y+8*l7_u+k*(shown.height-16*l7_u)/3,shown.width-8*l7_u,4*l7_u,Fade(l7_rock_dark,0.8));
-            }
-            DrawCircle(shown.x+6*l7_u,shown.y+6*l7_u,2*l7_u,Fade(l7_rock_light,0.9));
-            DrawCircle(shown.x+shown.width-6*l7_u,shown.y+6*l7_u,2*l7_u,Fade(l7_rock_light,0.9));
-            DrawRectangleGradientV(shown.x,shown.y+shown.height-7*l7_u,shown.width,7*l7_u,BLANK,Fade(l7_lava,0.55));
-            if (l7_plank_state[b][i]==1)
-            {
-                DrawLineEx((Vector2){shown.x+shown.width/2,shown.y},(Vector2){shown.x+shown.width/3,shown.y+shown.height},3*l7_u,Fade(l7_lava_hot,0.95));
-                DrawRectangleLinesEx(shown,3*l7_u,Fade(l7_ember,0.8));
-            }
+            Rectangle shown = {r.x+shake,r.y,r.width,r.height};
+            //frame 1 is the sound grating, frame 2 the one that is already tearing open
+            int frame = (l7_plank_state[b][i]==1) ? 1 : 0;
+            Rectangle source = {frame*128,0,128,256};
+            Vector2 no_plank_origin = {0,0};
+            DrawTexturePro(l7_catwalk_texture,source,shown,no_plank_origin,0,WHITE);
+            if (l7_plank_state[b][i]==1) DrawRectangleLinesEx(shown,2*l7_u,Fade(l7_ember,0.7));
         }
     }
 
@@ -937,17 +933,22 @@ void l7_draw_obstacles()
         }
         if (l7_steam_clock[i]<1.4)
         {
+            //one burst drawn three times along the way it blows, so the cloud reads as
+            //going somewhere. The four frames are the same puffs expanding.
             float strength = 1 - l7_steam_clock[i]/1.4;
             Vector2 way = Vector2Normalize(l7_steam_push[i]);
             Vector2 middle = {r.x+r.width/2,r.y+r.height/2};
-            for (int k=0; k<9; k++)
+            for (int k=0; k<3; k++)
             {
-                float t = fmod(l7_animation_time*1.8 + k*0.11,1.0);
-                Vector2 puff = Vector2Add(middle,Vector2Scale(way,t*230*l7_u));
-                float side = sin(t*6 + k)*14*l7_u;
-                puff.x = puff.x + way.y*side;
-                puff.y = puff.y - way.x*side;
-                DrawCircleV(puff,(14+t*30)*l7_u,Fade(l7_steam,0.35*strength*(1-t)));
+                float t = fmod(l7_animation_time*1.4 + k*0.33,1.0);
+                int frame = t*4;
+                if (frame>3) frame = 3;
+                Vector2 puff = Vector2Add(middle,Vector2Scale(way,t*210*l7_u));
+                float size = (130 + t*150)*l7_u;
+                Rectangle source = {frame*256,0,256,256};
+                Rectangle dest = {puff.x,puff.y,size,size};
+                Vector2 origin = {size/2,size/2};
+                DrawTexturePro(l7_steam_texture,source,dest,origin,t*40+k*25,Fade(WHITE,0.9*strength*(1-t*0.7)));
             }
         }
         else if (l7_steam_clock[i]>3.4 && fmod(l7_animation_time*8,2)<1.2)
@@ -959,23 +960,21 @@ void l7_draw_obstacles()
 
     //the lava tube: a pipe mouth in the rock at one end, and where it spits you out at
     //the other. The arrow says which way you leave.
-    DrawCircleV(l7_tube_in,44*l7_u,l7_rock_dark);
-    DrawRing(l7_tube_in,36*l7_u,44*l7_u,0,360,28,l7_rock_light);
-    DrawCircleV(l7_tube_in,34*l7_u,BLACK);
-    DrawRing(l7_tube_in,24*l7_u,32*l7_u,l7_animation_time*110,l7_animation_time*110+250,24,Fade(l7_lava,0.9));
-    for (int k=0; k<5; k++)
-    {
-        float a = l7_animation_time*2.6 + k*1.25;
-        float r = 10*l7_u + fmod(l7_animation_time*40*l7_u + k*18*l7_u,24*l7_u);
-        DrawCircleV((Vector2){l7_tube_in.x+cos(a)*r,l7_tube_in.y+sin(a)*r},3*l7_u,Fade(l7_ember,0.8));
-    }
+    //frame 1 is the mouth that swallows, frame 2 the one that spits you back out. The
+    //ring of stone is 112 of the sprite's 128 px, so this size puts the stonework around
+    //the circle that actually catches the ball.
+    float mouth = 36*l7_u*2*128/112;
+    Rectangle tube_in_source = {0,0,256,256};
+    Rectangle tube_in_dest = {l7_tube_in.x,l7_tube_in.y,mouth,mouth};
+    Vector2 tube_origin = {mouth/2,mouth/2};
+    //both turn, slowly, so the swirl reads as pulling in and throwing out
+    DrawTexturePro(l7_tube_texture,tube_in_source,tube_in_dest,tube_origin,l7_animation_time*30,WHITE);
 
     float facing = l7_tube_facing*DEG2RAD;
-    Vector2 nose = {l7_tube_out.x+cos(facing)*60*l7_u,l7_tube_out.y+sin(facing)*60*l7_u};
-    DrawCircleV(l7_tube_out,40*l7_u,l7_rock_dark);
-    DrawRing(l7_tube_out,32*l7_u,40*l7_u,0,360,28,l7_rock_light);
-    DrawCircleV(l7_tube_out,30*l7_u,Fade(l7_lava,0.85));
-    DrawCircleV(l7_tube_out,18*l7_u,Fade(l7_lava_hot,0.9));
+    Vector2 nose = {l7_tube_out.x+cos(facing)*58*l7_u,l7_tube_out.y+sin(facing)*58*l7_u};
+    Rectangle tube_out_source = {256,0,256,256};
+    Rectangle tube_out_dest = {l7_tube_out.x,l7_tube_out.y,mouth,mouth};
+    DrawTexturePro(l7_tube_texture,tube_out_source,tube_out_dest,tube_origin,-l7_animation_time*40,WHITE);
     DrawPoly(nose,3,18*l7_u,l7_tube_facing,Fade(l7_ember,0.9));
     DrawPolyLines(nose,3,18*l7_u,l7_tube_facing,l7_lava_hot);
 
@@ -987,28 +986,20 @@ void l7_draw_obstacles()
         float flood = l7_vent_flood(i);
         if (flood>0)
         {
+            //the four frames are one pool at four sizes, 110, 170, 220 and 248 of their
+            //256, so the frame comes from how far the flood has spread and is then scaled
+            //so the painted crust edge sits on the edge that actually burns.
+            float pool[4] = {110,170,220,248};
             float heat = flood/l7_vent_reach;
-            DrawCircleGradient(l7_vent[i],flood*1.35,Fade(l7_lava,0.30*heat),BLANK);
-            DrawCircleV(l7_vent[i],flood,Fade(GetColor(0xD1541FFF),0.92));
-            DrawCircleV(l7_vent[i],flood*0.74,Fade(l7_lava,0.95));
-            DrawCircleV(l7_vent[i],flood*0.42,Fade(l7_lava_hot,0.95));
-            //a broken crust edge all the way round
-            for (int k=0; k<18; k++)
-            {
-                float a = k*0.349 + l7_animation_time*0.6;
-                float wobble = flood*(0.94 + 0.08*sin(k*2.1 + l7_animation_time*3));
-                Vector2 edge = {l7_vent[i].x + cos(a)*wobble,l7_vent[i].y + sin(a)*wobble};
-                DrawCircleV(edge,flood*0.13,Fade(GetColor(0x8A2E12FF),0.9));
-                DrawCircleV(edge,flood*0.07,Fade(l7_ember,0.8));
-            }
-            //and blobs thrown clear of it
-            for (int k=0; k<7; k++)
-            {
-                float a = k*0.9 + i*1.3;
-                float out = flood*(1.15 + 0.25*sin(l7_animation_time*2 + k));
-                Vector2 blob = {l7_vent[i].x + cos(a)*out,l7_vent[i].y + sin(a)*out};
-                DrawCircleV(blob,(7-k%3)*l7_u,Fade(l7_ember,0.75*heat));
-            }
+            int frame = heat*4;
+            if (frame>3) frame = 3;
+            if (frame<0) frame = 0;
+            float size = flood*2*256/pool[frame];
+            Rectangle source = {frame*512,0,512,512};
+            Rectangle dest = {l7_vent[i].x,l7_vent[i].y,size,size};
+            Vector2 origin = {size/2,size/2};
+            DrawCircleGradient(l7_vent[i],flood*1.4,Fade(l7_lava,0.25*heat),BLANK);
+            DrawTexturePro(l7_eruption_texture,source,dest,origin,i*37,WHITE);
         }
         int frame = 0;
         if (l7_vent_live[i]==1 && l7_vent_stage[i]<1.5) frame = 1;
@@ -1091,18 +1082,15 @@ void l7_draw_obstacles()
 void l7_draw_ball_and_pot()
 {
     //the heart: shut while the vent is working, open afterwards
-    if (l7_heart_open>0)
-    {
-        DrawCircleV(l7_pot,l7_radius_pot+14*l7_u,Fade(l7_lava_hot,0.3));
-        DrawCircleV(l7_pot,l7_radius_pot+3*l7_u,Fade(BLACK,0.7));
-        DrawCircleV(l7_pot,l7_radius_pot,BLACK);
-        DrawCircleLines(l7_pot.x,l7_pot.y,l7_radius_pot+6*l7_u,l7_lava_hot);
-    }
-    else
-    {
-        DrawCircleV(l7_pot,l7_radius_pot+10*l7_u,Fade(l7_lava,0.85));
-        DrawCircleV(l7_pot,l7_radius_pot,l7_lava_hot);
-    }
+    //the basin: frame 1 is plugged, frame 2 is the hole you have to land in. The hole is
+    //72 of the sprite's 256 px, so this size puts it over the hole that counts.
+    int heart_frame = (l7_heart_open>0) ? 1 : 0;
+    float basin = l7_radius_pot*2*256/72;
+    Rectangle heart_source = {heart_frame*512,0,512,512};
+    Rectangle heart_dest = {l7_pot.x,l7_pot.y,basin,basin};
+    Vector2 heart_origin = {basin/2,basin/2};
+    if (l7_heart_open>0) DrawCircleGradient(l7_pot,basin*0.75,Fade(l7_lava,0.35),BLANK);
+    DrawTexturePro(l7_heart_texture,heart_source,heart_dest,heart_origin,0,WHITE);
 
     DrawCircleV(l7_ball,l7_radius_ball,WHITE);
     DrawCircleLines(l7_ball.x,l7_ball.y,l7_radius_ball,GRAY);
@@ -1262,6 +1250,11 @@ void l7_start(int screen_width, int screen_height)
     l7_lava_texture = LoadTexture("assets/magma/magma_lava_tile.png");
     l7_crust_texture = LoadTexture("assets/magma/magma_crust.png");
     l7_vent_texture = LoadTexture("assets/magma/magma_vent.png");
+    l7_eruption_texture = LoadTexture("assets/magma/magma_eruption.png");
+    l7_steam_texture = LoadTexture("assets/magma/magma_steam.png");
+    l7_catwalk_texture = LoadTexture("assets/magma/magma_catwalk.png");
+    l7_tube_texture = LoadTexture("assets/magma/magma_tube.png");
+    l7_heart_texture = LoadTexture("assets/magma/magma_heart.png");
     l7_geyser_texture = LoadTexture("assets/magma/magma_geyser.png");
     l7_crystal_texture = LoadTexture("assets/magma/magma_crystal.png");
     l7_raft_texture = LoadTexture("assets/magma/magma_raft.png");
@@ -1276,6 +1269,11 @@ void l7_start(int screen_width, int screen_height)
     SetTextureFilter(l7_lava_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l7_crust_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l7_vent_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l7_eruption_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l7_steam_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l7_catwalk_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l7_tube_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l7_heart_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l7_geyser_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l7_crystal_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l7_raft_texture,TEXTURE_FILTER_BILINEAR);
@@ -1344,6 +1342,11 @@ void l7_unload()
     UnloadTexture(l7_lava_texture);
     UnloadTexture(l7_crust_texture);
     UnloadTexture(l7_vent_texture);
+    UnloadTexture(l7_eruption_texture);
+    UnloadTexture(l7_steam_texture);
+    UnloadTexture(l7_catwalk_texture);
+    UnloadTexture(l7_tube_texture);
+    UnloadTexture(l7_heart_texture);
     UnloadTexture(l7_geyser_texture);
     UnloadTexture(l7_crystal_texture);
     UnloadTexture(l7_raft_texture);

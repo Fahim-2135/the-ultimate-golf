@@ -29,6 +29,7 @@ Texture2D l5_ice_texture;
 Texture2D l5_pine_texture;
 Texture2D l5_snowball_texture;
 Texture2D l5_gondola_texture;
+Texture2D l5_bridge_texture;
 Texture2D l5_campfire_texture;
 Texture2D l5_icicle_texture;
 Texture2D l5_ibex_texture;
@@ -908,13 +909,13 @@ void l5_draw_ground()
             Rectangle r = l5_plank[b][i];
             float shake = 0;
             if (l5_plank_state[b][i]==1) shake = sin(l5_animation_time*60)*3*l5_u;
-            Rectangle shown = {r.x+shake,r.y,r.width-4*l5_u,r.height};
-            DrawRectangleRec(shown,Fade(l5_ice_light,0.95));
-            DrawRectangleLinesEx(shown,2*l5_u,l5_ice);
-            if (l5_plank_state[b][i]==1)
-            {
-                DrawLineEx((Vector2){shown.x+shown.width/2,shown.y},(Vector2){shown.x+shown.width/3,shown.y+shown.height},3*l5_u,l5_crevasse);
-            }
+            Rectangle shown = {r.x+shake,r.y,r.width,r.height};
+            //frame 1 is the sound plank, frame 2 the one that has already split
+            int frame = (l5_plank_state[b][i]==1) ? 1 : 0;
+            Rectangle source = {frame*128,0,128,256};
+            Vector2 no_plank_origin = {0,0};
+            DrawTexturePro(l5_bridge_texture,source,shown,no_plank_origin,0,WHITE);
+            if (l5_plank_state[b][i]==1) DrawRectangleLinesEx(shown,2*l5_u,Fade(l5_crevasse,0.7));
         }
     }
 }
@@ -1238,6 +1239,7 @@ void l5_start(int screen_width, int screen_height)
     l5_pine_texture = LoadTexture("assets/frozen/frozen_pine.png");
     l5_snowball_texture = LoadTexture("assets/frozen/frozen_snowball.png");
     l5_gondola_texture = LoadTexture("assets/frozen/frozen_gondola.png");
+    l5_bridge_texture = LoadTexture("assets/frozen/frozen_bridge.png");
     l5_campfire_texture = LoadTexture("assets/frozen/frozen_campfire.png");
     l5_icicle_texture = LoadTexture("assets/frozen/frozen_icicle.png");
     l5_ibex_texture = LoadTexture("assets/frozen/frozen_ibex.png");
@@ -1255,6 +1257,7 @@ void l5_start(int screen_width, int screen_height)
     SetTextureFilter(l5_pine_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_snowball_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_gondola_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_bridge_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_campfire_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_icicle_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_ibex_texture,TEXTURE_FILTER_BILINEAR);
@@ -1332,6 +1335,7 @@ void l5_unload()
     UnloadTexture(l5_pine_texture);
     UnloadTexture(l5_snowball_texture);
     UnloadTexture(l5_gondola_texture);
+    UnloadTexture(l5_bridge_texture);
     UnloadTexture(l5_campfire_texture);
     UnloadTexture(l5_icicle_texture);
     UnloadTexture(l5_ibex_texture);
