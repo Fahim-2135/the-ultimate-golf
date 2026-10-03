@@ -1523,7 +1523,7 @@ const char *brief_name[LEVELS][13] = {
     {"The sea","Soft sand","Wet sand","Tidal sand bar","Rip current","Whirlpool","Crab","Palm tree","Beach ball"},
     {"The void","Wormhole","Black hole","Planet","Asteroid","Laser gate","Satellite","Energy bumper","Vacuum strip","Solar wind","Comet","Meteor shower","UFO"},
     {"Piranha river","Plank bridge","Mud","Moss","Quicksand","Boulder","Mushroom","Gate plate","Dart trap","Altar plates","Totem"},
-    {"The crevasse","Black ice","Deep powder","Snow drift","Ice bridge","Growing snowball","Icicle","Ski gondola","Pine tree","Campfire","The wind","Avalanche"},
+    {"Open water","Frozen lake","Deep powder","Snow drift","Boardwalk","Growing snowball","Icicle","Ski gondola","Pine tree","Campfire","The wind","Avalanche"},
     {"The dark","Candle","Blink lamp","Hidden way down","Phasing wall","Ghost","Cobweb","Trapdoor","Chandelier","Mirror pair","Bat","Crypt plates"},
     {"The lava lake","Rising lava","Cooling crust","Rock bridge","Eruption vent","Geyser","Lava tube","Rock raft","Steam vent","Obsidian crystal","Rockfall","The heart"}};
 float brief_x[LEVELS][13] = {
@@ -1531,7 +1531,7 @@ float brief_x[LEVELS][13] = {
     {390,225,465,520,915,730,1200,1180,1000},
     {800,1840,960,600,700,1810,1200,1330,675,110,-2,-3,-1},
     {690,690,340,835,950,330,250,1080,1280,1810,1810},
-    {620,250,160,380,560,900,930,1180,400,360,250,250},
+    {1580,420,1720,1205,1190,1000,1000,485,220,1440,1080,300},
     {980,250,470,355,860,290,170,700,860,180,760,1000},
     {620,620,575,1120,250,620,960,1140,400,900,900,1700}};
 float brief_y[LEVELS][13] = {
@@ -1539,7 +1539,7 @@ float brief_y[LEVELS][13] = {
     {520,515,165,490,630,820,140,225,225},
     {250,700,640,720,150,454,990,580,990,490,0,0,0},
     {600,210,920,350,795,570,220,570,334,200,570},
-    {480,600,260,270,300,640,190,290,880,930,620,620},
+    {910,390,665,920,676,470,404,660,700,560,460,400},
     {620,860,220,235,385,205,220,480,480,200,600,880},
     {480,1000,690,250,300,960,660,240,250,640,500,760}};
 const char *brief_text[LEVELS][13] = {
@@ -1589,18 +1589,18 @@ const char *brief_text[LEVELS][13] = {
      "Fires darts while its eyes are red\n= DARTED.",
      "Press BOTH corner plates to open the\naltar door. Falling un-presses them.",
      "Spinning log arms guard\nthe altar door."},
-    {"Miss the snow and it is a long way down.\nBack to your last shot.",
-     "Almost no friction. The ball keeps\ngoing, and the wind keeps pushing.",
+    {"The lakes have melted through in places.\nGo in and the shot starts again.",
+     "Four of them, and almost no friction.\nThe ball keeps going. So does the wind.",
      "Kills the speed at once. A safe place\nto stop and line up a shot.",
      "Stand still in one for three seconds\nand the snow swallows the ball.",
-     "Cracks when you roll on it, falls,\nand grows back five seconds later.",
-     "Rolls down the slope and GROWS as it\ngoes. The bigger it is, the harder it hits.",
-     "Hangs over the pass. Go under it\nand it comes down.",
-     "Rides the cable across the top gap.\nStep on and let it carry you.",
+     "Laid over the open water. It cracks when\nyou roll on it and comes back in five seconds.",
+     "Crosses the basin and GROWS as it goes.\nThe bigger it is, the harder it hits.",
+     "Hangs off the mountain. Go under one\nand it comes down.",
+     "Rides the cable across the middle lake.\nStep on and let it carry you.",
      "Solid. Useful: it is the only thing\nthat will stop you on ice.",
-     "Melts the ice around it back to grip.\nThere are three of them, and they are the route.",
+     "Melts the ice around it back to grip.\nThree of them, one on each big lake.",
      "Pushes every rolling ball. Breeze, then\ngust, then gale, and the way it blows flips.",
-     "Once a game it sweeps the left side\nand shoves you back down the mountain."},
+     "Once a game it sweeps the west of the\nbasin and shoves you back towards the camp."},
     {"You only see what your light reaches.\nThe briefing is the map you get.",
      "Roll over one and it stays lit for the\nrest of the level. Light is progress.",
      "Flares for a second on its own and shows\nyou a slice of the house you have not seen.",

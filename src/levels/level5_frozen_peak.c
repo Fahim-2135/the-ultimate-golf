@@ -39,6 +39,8 @@ Texture2D l5_crate_texture;
 Texture2D l5_boulder_texture;
 Texture2D l5_spindrift_texture;
 Texture2D l5_sign_texture;
+Texture2D l5_water_texture;
+Texture2D l5_foam_texture;
 
 //l5_ball and l5_pot
 Vector2 l5_ball;
@@ -60,6 +62,11 @@ float l5_message_timer = 0;
 
 //the ground: snow is safe, everything else is a crevasse
 Rectangle l5_snow_ground[9];
+//open water: leads and melt holes in the ice. The ball goes through and the shot starts again.
+Rectangle l5_water[4];
+//the rock of the mountain, and the igloo at the far side of the basin
+Rectangle l5_rock_wall[5];
+Rectangle l5_igloo[5];
 Rectangle l5_black_ice[4];
 Rectangle l5_powder[3];
 
@@ -169,42 +176,56 @@ void l5_reset_level()
     l5_radius_ball = 7*l5_u;
     l5_radius_pot = 11*l5_u;
 
-    //SIX LANES, climbed one at a time, alternating ends. The whole climb is about
-    //10,000 design units of travel, so every lane can hold two or three things with
-    //hundreds of units of clear snow between them.
-    //   A bottom  -> right bridge -> B -> left bridge -> C -> right bridge
-    //   -> D -> left bridge -> E -> right bridge -> F summit
-    l5_snow_ground[0] = l5_make_rect(60,920,1640,130);    //A base camp
-    l5_snow_ground[1] = l5_make_rect(220,750,1640,130);   //B the glacier
-    l5_snow_ground[2] = l5_make_rect(60,580,1640,130);    //C the snowball run
-    l5_snow_ground[3] = l5_make_rect(220,410,1640,130);   //D the ice cave
-    l5_snow_ground[4] = l5_make_rect(60,240,1640,130);    //E the high traverse
-    l5_snow_ground[5] = l5_make_rect(220,90,1640,120);    //F the summit ridge
-    //the three snow ramps that join the lanes the bridges do not
-    l5_snow_ground[6] = l5_make_rect(220,580,170,300);    //B -> C, left
-    l5_snow_ground[7] = l5_make_rect(1530,410,170,300);   //C -> D, right
-    l5_snow_ground[8] = l5_make_rect(1600,90,260,280);    //E -> F, right
+    //ONE BASIN, not a set of lanes. The whole floor is snow, and what makes it hard is
+    //what is lying on it: four frozen lakes you slide across, the open water in the middle
+    //of them, the mountain you have to go round, and the weather. You can stand almost
+    //anywhere, so there is always more than one way to the igloo.
+    l5_snow_ground[0] = l5_make_rect(60,110,1800,920);
+    for (int i=1; i<9; i++) l5_snow_ground[i] = l5_make_rect(-400,-400,10,10);
 
-    //one long stretch of black ice per lane, never the whole lane
-    l5_black_ice[0] = l5_make_rect(880,920,420,130);
-    l5_black_ice[1] = l5_make_rect(560,750,520,130);
-    l5_black_ice[2] = l5_make_rect(900,580,560,130);
-    l5_black_ice[3] = l5_make_rect(700,240,520,130);
+    //the four lakes. Black ice: it carries you, but it will not let you stop.
+    l5_black_ice[0] = l5_make_rect(380,680,700,340);      //the long lake, by the camp
+    l5_black_ice[1] = l5_make_rect(900,520,620,300);      //the middle lake
+    l5_black_ice[2] = l5_make_rect(140,250,560,280);      //the north lake
+    l5_black_ice[3] = l5_make_rect(1330,780,480,240);     //the east lake
 
-    //powder to stop in, at the end of the three nastiest legs
-    l5_powder[0] = l5_make_rect(1380,920,200,130);
-    l5_powder[1] = l5_make_rect(480,580,190,130);
-    l5_powder[2] = l5_make_rect(1640,90,200,120);
+    //the open water in them. This is the only thing on the level that can swallow a shot
+    //outright, and all four are plainly visible.
+    l5_water[0] = l5_make_rect(470,734,430,240);
+    l5_water[1] = l5_make_rect(930,576,520,200);
+    l5_water[2] = l5_make_rect(250,330,300,160);
+    l5_water[3] = l5_make_rect(1430,840,300,140);
 
-    //two drift pits, far apart
-    l5_drift[0] = l5_make_rect(520,750,170,62);
-    l5_drift[1] = l5_make_rect(1180,410,170,62);
+    //the mountain: a rock massif in the middle of the basin that you go round, either
+    //along the lakes to the south or over the north shore
+    l5_rock_wall[0] = l5_make_rect(700,150,480,240);
+    l5_rock_wall[1] = l5_make_rect(1120,220,260,180);
+    l5_rock_wall[2] = l5_make_rect(560,260,200,150);
+    //two outcrops out on the flat, to break up the open snow
+    l5_rock_wall[3] = l5_make_rect(1180,120,120,110);
+    l5_rock_wall[4] = l5_make_rect(820,840,150,120);
+
+    //the igloo, built against the north-east corner. The door faces south, so the last
+    //shot has to come up and in.
+    l5_igloo[0] = l5_make_rect(1560,160,300,40);          //back
+    l5_igloo[1] = l5_make_rect(1560,160,40,220);          //west side
+    l5_igloo[2] = l5_make_rect(1820,160,40,220);          //east side
+    l5_igloo[3] = l5_make_rect(1560,340,110,40);          //south wall, west of the door
+    l5_igloo[4] = l5_make_rect(1750,340,110,40);          //south wall, east of the door
+
+    //deep powder: the places you can stop dead
+    l5_powder[0] = l5_make_rect(300,120,200,130);
+    l5_powder[1] = l5_make_rect(1620,600,200,130);
+    l5_powder[2] = l5_make_rect(300,560,190,130);
+
+    //two holes blown full of soft snow, out on the open field
+    l5_drift[0] = l5_make_rect(1120,860,170,120);
+    l5_drift[1] = l5_make_rect(1430,450,170,120);
     l5_drift_timer = 0;
 
-    //the two crumbling bridges: short, over an obvious gap, and they are the only way
-    //up at their end of the mountain
-    for (int i=0; i<5; i++) l5_plank[0][i] = l5_make_rect(1546+i*34,856,34,84);     //A -> B, right
-    for (int i=0; i<5; i++) l5_plank[1][i] = l5_make_rect(216+i*34,346,34,84);      //D -> E, left
+    //boardwalks over the two biggest leads, for anyone who would rather not go round
+    for (int i=0; i<5; i++) l5_plank[0][i] = l5_make_rect(520+i*66,776,66,150);
+    for (int i=0; i<7; i++) l5_plank[1][i] = l5_make_rect(980+i*60,614,60,124);
     for (int b=0; b<2; b++)
     {
         for (int i=0; i<7; i++)
@@ -214,46 +235,46 @@ void l5_reset_level()
         }
     }
 
-    //the gondola is a ferry along lane D, not a gate: catch it and it saves you shots
-    l5_gondola = l5_make_rect(400,415,170,120);
+    //the cable car crosses the middle lake, open water and all
+    l5_gondola = l5_make_rect(400,600,170,120);
     l5_gondola_left = 300*l5_u;
-    l5_gondola_right = 1560*l5_u;
-    l5_gondola_speed = -200*l5_u;
+    l5_gondola_right = 1480*l5_u;
+    l5_gondola_speed = 190*l5_u;
 
-    //the snowball rolls the length of lane C, straight at you
-    l5_snowball_from = l5_make_point(1620,645);
-    l5_snowball_to = l5_make_point(180,645);
+    //the snowball comes down the open south shore, growing as it rolls
+    l5_snowball_from = l5_make_point(1780,470);
+    l5_snowball_to = l5_make_point(240,470);
     l5_snowball_small = 15*l5_u;
-    l5_snowball_big = 42*l5_u;
+    l5_snowball_big = 40*l5_u;
     l5_snowball = l5_snowball_from;
     l5_snowball_radius = l5_snowball_small;
     l5_snowball_travel = 0;
     l5_snowball_wait = 0;
     l5_shatter_timer = 0;
 
-    //icicles over lane D only, spread right out
-    l5_icicle[0] = l5_make_point(620,398);
-    l5_icicle[1] = l5_make_point(1020,398);
-    l5_icicle[2] = l5_make_point(1420,398);
+    //icicles hang off the south face of the mountain
+    l5_icicle[0] = l5_make_point(800,404);
+    l5_icicle[1] = l5_make_point(1000,404);
+    l5_icicle[2] = l5_make_point(1170,414);
     for (int i=0; i<3; i++)
     {
         l5_icicle_state[i] = 0;
         l5_icicle_fall[i] = 0;
     }
 
-    //pines stand at the lane edges, two per lane at most, far apart
+    //pines, in stands on the open snow
     l5_pine_radius = 40*l5_u;
-    l5_pine[0] = l5_make_point(420,1040);
-    l5_pine[1] = l5_make_point(1240,1040);
-    l5_pine[2] = l5_make_point(760,866);
-    l5_pine[3] = l5_make_point(1500,696);
-    l5_pine[4] = l5_make_point(560,356);
+    l5_pine[0] = l5_make_point(220,700);
+    l5_pine[1] = l5_make_point(1240,1000);
+    l5_pine[2] = l5_make_point(1540,660);
+    l5_pine[3] = l5_make_point(960,480);
+    l5_pine[4] = l5_make_point(460,180);
 
-    //a campfire at the start of a lane is a safe place to aim from
-    l5_campfire_radius = 110*l5_u;
-    l5_campfire[0] = l5_make_point(240,985);
-    l5_campfire[1] = l5_make_point(1660,645);
-    l5_campfire[2] = l5_make_point(360,305);
+    //campfires, out on the lakes: the only places on the ice where the ball has grip
+    l5_campfire_radius = 120*l5_u;
+    l5_campfire[0] = l5_make_point(980,960);
+    l5_campfire[1] = l5_make_point(1440,560);
+    l5_campfire[2] = l5_make_point(200,470);
 
     //the weather
     l5_wind_clock = 0;
@@ -261,69 +282,67 @@ void l5_reset_level()
     l5_wind.y = 0;
     l5_wind_strength = 0;
     l5_whiteout = 0;
-    l5_avalanche_wait = 30;
+    l5_avalanche_wait = 34;
     l5_avalanche_done = 0;
     l5_avalanche_state = 0;
     l5_avalanche_timer = 0;
     l5_avalanche_y = 0;
 
-    //one ibex per lane, pacing a long beat
+    //ibex, pacing the open ground
     l5_ibex_radius = 24*l5_u;
-    l5_ibex[0] = l5_make_point(900,985);
-    l5_ibex_from[0] = 700*l5_u;
-    l5_ibex_to[0] = 1300*l5_u;
+    l5_ibex[0] = l5_make_point(620,620);
+    l5_ibex_from[0] = 420*l5_u;
+    l5_ibex_to[0] = 900*l5_u;
     l5_ibex_speed[0] = 85*l5_u;
-    l5_ibex[1] = l5_make_point(1200,815);
-    l5_ibex_from[1] = 1000*l5_u;
-    l5_ibex_to[1] = 1700*l5_u;
+    l5_ibex[1] = l5_make_point(1250,440);
+    l5_ibex_from[1] = 1100*l5_u;
+    l5_ibex_to[1] = 1520*l5_u;
     l5_ibex_speed[1] = -95*l5_u;
-    l5_ibex[2] = l5_make_point(700,305);
-    l5_ibex_from[2] = 500*l5_u;
-    l5_ibex_to[2] = 1300*l5_u;
-    l5_ibex_speed[2] = 105*l5_u;
+    l5_ibex[2] = l5_make_point(1620,700);
+    l5_ibex_from[2] = 1460*l5_u;
+    l5_ibex_to[2] = 1810*l5_u;
+    l5_ibex_speed[2] = 100*l5_u;
 
-    //flag lines hang over the gaps between lanes, where they are easy to read
-    l5_flagline[0] = l5_make_point(500,895);
-    l5_flagline_width[0] = 420*l5_u;
-    l5_flagline[1] = l5_make_point(900,555);
-    l5_flagline_width[1] = 420*l5_u;
-    l5_flagline[2] = l5_make_point(700,215);
-    l5_flagline_width[2] = 420*l5_u;
+    //flag lines, where you can see them lean into the wind before you take the shot
+    l5_flagline[0] = l5_make_point(300,620);
+    l5_flagline_width[0] = 400*l5_u;
+    l5_flagline[1] = l5_make_point(880,460);
+    l5_flagline_width[1] = 400*l5_u;
+    l5_flagline[2] = l5_make_point(1400,260);
+    l5_flagline_width[2] = 400*l5_u;
 
-    //the toboggan runs across lane E, a timing problem on its own
-    l5_toboggan = l5_make_rect(1120,240,100,130);
-    l5_toboggan_from = 240*l5_u;
-    l5_toboggan_to = 370*l5_u;
+    //the toboggan runs across the east shore
+    l5_toboggan = l5_make_rect(1300,760,100,150);
+    l5_toboggan_from = 700*l5_u;
+    l5_toboggan_to = 940*l5_u;
     l5_toboggan_speed = 150*l5_u;
 
-    //crates and boulders: one obstacle at a time, well spread
-    l5_crate[0] = l5_make_rect(640,922,76,76);
-    l5_crate[1] = l5_make_rect(1340,752,76,76);
-    l5_crate[2] = l5_make_rect(1400,242,76,76);
+    //crates and boulders out on the snow
+    l5_crate[0] = l5_make_rect(640,560,76,76);
+    l5_crate[1] = l5_make_rect(240,180,76,76);
+    l5_crate[2] = l5_make_rect(1560,880,76,76);
     l5_boulder_radius = 34*l5_u;
-    l5_boulder[0] = l5_make_point(1100,1012);
-    l5_boulder[1] = l5_make_point(1480,502);
-    l5_boulder[2] = l5_make_point(300,672);
-    l5_boulder[3] = l5_make_point(1300,118);
-
+    l5_boulder[0] = l5_make_point(400,440);
+    l5_boulder[1] = l5_make_point(1180,760);
+    l5_boulder[2] = l5_make_point(760,660);
+    l5_boulder[3] = l5_make_point(1360,540);
     for (int i=0; i<4; i++) l5_boulder_hit[i] = 0;
 
-    //a signpost planted at the edge of every lane, pointing at the climb you want next.
-    //They are the one thing here whose whole job is telling you where to go.
-    l5_sign[0] = l5_make_point(1450,1040); l5_sign_facing[0] = 1;    //A -> the right bridge
-    l5_sign[1] = l5_make_point(560,866);   l5_sign_facing[1] = -1;   //B -> the left ramp
-    l5_sign[2] = l5_make_point(1300,696);  l5_sign_facing[2] = 1;    //C -> the right ramp
-    l5_sign[3] = l5_make_point(620,526);   l5_sign_facing[3] = -1;   //D -> the left bridge
-    l5_sign[4] = l5_make_point(1300,356);  l5_sign_facing[4] = 1;    //E -> the right ramp
+    //signposts, all pointing the way to the igloo
+    l5_sign[0] = l5_make_point(300,980); l5_sign_facing[0] = 1;
+    l5_sign[1] = l5_make_point(900,1010); l5_sign_facing[1] = 1;
+    l5_sign[2] = l5_make_point(1560,1010); l5_sign_facing[2] = 1;
+    l5_sign[3] = l5_make_point(1760,560); l5_sign_facing[3] = 1;
+    l5_sign[4] = l5_make_point(620,460); l5_sign_facing[4] = 1;
     l5_drift_offset = 0;
 
-    //ball and pot: the whole climb apart
-    l5_start_position = l5_make_point(140,985);
+    //the camp is in the south-west corner, the igloo in the north-east
+    l5_start_position = l5_make_point(180,960);
     l5_ball = l5_start_position;
     l5_last_shot_position = l5_start_position;
     l5_speed.x = 0;
     l5_speed.y = 0;
-    l5_pot = l5_make_point(340,150);
+    l5_pot = l5_make_point(1710,270);
     l5_stroke = 0;
     l5_game_state = 0;
     l5_aiming = 0;
@@ -392,10 +411,7 @@ int l5_bounce_off_circle(Vector2 center, float radius, float bounce)
 //is this point standing on something, snow or a plank that has not fallen yet
 int l5_on_safe_ground(Vector2 point)
 {
-    for (int i=0; i<9; i++)
-    {
-        if (CheckCollisionPointRec(point,l5_snow_ground[i])) return 1;
-    }
+    //a boardwalk or the cable car carries you over anything
     for (int b=0; b<2; b++)
     {
         for (int i=0; i<l5_plank_count[b]; i++)
@@ -404,6 +420,15 @@ int l5_on_safe_ground(Vector2 point)
         }
     }
     if (CheckCollisionPointRec(point,l5_gondola)) return 1;
+    //open water is the hole in the floor on this level
+    for (int i=0; i<4; i++)
+    {
+        if (CheckCollisionPointRec(point,l5_water[i])) return 0;
+    }
+    for (int i=0; i<9; i++)
+    {
+        if (CheckCollisionPointRec(point,l5_snow_ground[i])) return 1;
+    }
     return 0;
 }
 
@@ -751,6 +776,8 @@ void l5_update_ball(float dt)
         if (l5_bounce_off_circle(l5_boulder[i],l5_boulder_radius,1.3)) l5_boulder_hit[i] = 0.2;
     }
     for (int i=0; i<3; i++) l5_bounce_off_rectangle(l5_crate[i],Vector2Zero());
+    for (int i=0; i<5; i++) l5_bounce_off_rectangle(l5_rock_wall[i],Vector2Zero());
+    for (int i=0; i<5; i++) l5_bounce_off_rectangle(l5_igloo[i],Vector2Zero());
 
     //an ibex will shoulder the ball out of its way
     for (int i=0; i<3; i++)
@@ -788,6 +815,30 @@ void l5_update_ball(float dt)
 }
 
 
+//the foam where the water meets the ice, the same way the shoreline draws it
+void l5_draw_foam(Rectangle rec, Color tint)
+{
+    int frame = (int)(l5_animation_time*8)%4;
+    float long_side = rec.width + 40*l5_u;
+    Rectangle source = {rec.x/l5_u*2,frame*128+1,long_side/l5_u*2,126};
+    Vector2 origin = {long_side/2,32*l5_u};
+
+    Rectangle top = {rec.x+rec.width/2,rec.y-18*l5_u,long_side,64*l5_u};
+    DrawTexturePro(l5_foam_texture,source,top,origin,180,tint);
+    Rectangle bottom = {rec.x+rec.width/2,rec.y+rec.height+18*l5_u,long_side,64*l5_u};
+    DrawTexturePro(l5_foam_texture,source,bottom,origin,0,tint);
+
+    long_side = rec.height + 40*l5_u;
+    source.x = rec.y/l5_u*2;
+    source.width = long_side/l5_u*2;
+    origin.x = long_side/2;
+    Rectangle left = {rec.x-18*l5_u,rec.y+rec.height/2,long_side,64*l5_u};
+    DrawTexturePro(l5_foam_texture,source,left,origin,90,tint);
+    Rectangle right = {rec.x+rec.width+18*l5_u,rec.y+rec.height/2,long_side,64*l5_u};
+    DrawTexturePro(l5_foam_texture,source,right,origin,-90,tint);
+}
+
+
 //the snow picture, repeating, lined up with the screen so pieces join without seams
 void l5_draw_snow(Rectangle rec)
 {
@@ -810,30 +861,137 @@ void l5_draw_ice(Rectangle rec)
 
 void l5_draw_ground()
 {
-    //the crevasse under everything
-    DrawRectangle(0,0,l5_width,l5_height,l5_crevasse_deep);
-    for (int i=0; i<60; i++)
+    //the valley the basin sits in: a cold sky, then range after range of peaks going back
+    DrawRectangleGradientV(0,0,l5_width,l5_height,GetColor(0x8FB6D6FF),GetColor(0xD8E8F4FF));
+    for (int range=0; range<3; range++)
     {
-        float x = fmod(i*311*l5_u,l5_width);
-        float y = fmod(i*527*l5_u,l5_height);
-        DrawCircle(x,y,2*l5_u,Fade(l5_ice_light,0.18));
+        float base = (300 + range*150)*l5_u;
+        float high = (150 - range*34)*l5_u;
+        Color far = Fade(GetColor(0x5E7E9EFF),0.35 + range*0.2);
+        for (int k=-1; k<14; k++)
+        {
+            float x = k*170*l5_u + range*70*l5_u;
+            float lift = high*(0.6 + 0.4*sin(k*1.7 + range));
+            Vector2 left = {x,base};
+            Vector2 top = {x+85*l5_u,base-lift};
+            Vector2 right = {x+170*l5_u,base};
+            DrawTriangle(left,right,top,far);
+            //the snow on the top of it
+            Vector2 cap_left = {x+85*l5_u-lift*0.3,base-lift*0.55};
+            Vector2 cap_right = {x+85*l5_u+lift*0.3,base-lift*0.55};
+            DrawTriangle(cap_left,cap_right,top,Fade(WHITE,0.3 + range*0.18));
+        }
     }
+    //the snow the valley floor is made of, so the frame round the basin is not empty
+    DrawRectangleGradientV(0,540*l5_u,l5_width,l5_height-540*l5_u,GetColor(0xD8E8F4FF),GetColor(0xF2F7FBFF));
 
-    //snow platforms, with a rock lip and a blue shadow on the crevasse side
+    //the floor of the basin: snow, with a band of rock and a shadow where it drops away
     for (int i=0; i<9; i++)
     {
         Rectangle r = l5_snow_ground[i];
-        DrawRectangle(r.x-6*l5_u,r.y-6*l5_u,r.width+12*l5_u,r.height+12*l5_u,l5_rock_dark);
-        DrawRectangle(r.x-3*l5_u,r.y-3*l5_u,r.width+6*l5_u,r.height+6*l5_u,l5_rock);
+        if (r.width<20*l5_u) continue;
+        DrawRectangle(r.x-10*l5_u,r.y-10*l5_u,r.width+20*l5_u,r.height+20*l5_u,l5_rock_dark);
+        DrawRectangle(r.x-5*l5_u,r.y-5*l5_u,r.width+10*l5_u,r.height+10*l5_u,l5_rock);
         l5_draw_snow(r);
-        DrawRectangleLinesEx(r,2*l5_u,Fade(l5_snow_shade,0.8));
+        //a soft blue shade round the inside edge, so the floor does not look flat
+        DrawRectangleGradientV(r.x,r.y,r.width,40*l5_u,Fade(l5_snow_shade,0.5),BLANK);
+        DrawRectangleGradientV(r.x,r.y+r.height-40*l5_u,r.width,40*l5_u,BLANK,Fade(l5_snow_shade,0.5));
+        DrawRectangleGradientH(r.x,r.y,40*l5_u,r.height,Fade(l5_snow_shade,0.4),BLANK);
+        DrawRectangleGradientH(r.x+r.width-40*l5_u,r.y,40*l5_u,r.height,BLANK,Fade(l5_snow_shade,0.4));
     }
 
-    //black ice sheets
+    //the lakes. Each one is a sheet of black ice with a shore of pressure-heaved snow
+    //round it, so you can tell at a glance where the grip stops.
     for (int i=0; i<4; i++)
     {
-        l5_draw_ice(l5_black_ice[i]);
-        DrawRectangleLinesEx(l5_black_ice[i],2*l5_u,Fade(l5_ice_light,0.5));
+        Rectangle r = l5_black_ice[i];
+        //the shore, where the ice has heaved up against the bank. The lumps are all
+        //different sizes and sit a little in or out, so a lake never looks like a box.
+        for (int k=0; k<34; k++)
+        {
+            float along = k/33.0;
+            float lump = (15 + 9*sin(k*1.7+i))*l5_u;
+            float wobble = 7*l5_u*cos(k*2.3+i*1.3);
+            DrawCircleV((Vector2){r.x+along*r.width,r.y+wobble},lump,Fade(WHITE,0.92));
+            DrawCircleV((Vector2){r.x+along*r.width,r.y+r.height-wobble},lump*0.92,Fade(WHITE,0.92));
+        }
+        for (int k=0; k<18; k++)
+        {
+            float along = k/17.0;
+            float lump = (15 + 8*cos(k*2.1+i))*l5_u;
+            float wobble = 7*l5_u*sin(k*1.9+i);
+            DrawCircleV((Vector2){r.x+wobble,r.y+along*r.height},lump,Fade(WHITE,0.92));
+            DrawCircleV((Vector2){r.x+r.width-wobble,r.y+along*r.height},lump*0.92,Fade(WHITE,0.92));
+        }
+        l5_draw_ice(r);
+        //cracks running across the sheet
+        for (int k=0; k<5; k++)
+        {
+            float x1 = r.x + r.width*(0.1 + k*0.19);
+            float y1 = r.y + r.height*(0.15 + 0.14*sin(k*2.3));
+            float x2 = x1 + r.width*0.16*cos(k*1.9);
+            float y2 = r.y + r.height*(0.8 + 0.12*cos(k*1.3));
+            DrawLineEx((Vector2){x1,y1},(Vector2){x2,y2},2*l5_u,Fade(WHITE,0.35));
+        }
+        DrawRectangleLinesEx(r,3*l5_u,Fade(l5_ice_light,0.65));
+    }
+
+    //the open water in the lakes, and the broken floes round the edge of it
+    int water_frame = (int)(l5_animation_time*2)%2;
+    Rectangle water_source = {water_frame*512,0,512,512};
+    Vector2 no_water_origin = {0,0};
+    for (int i=0; i<4; i++)
+    {
+        Rectangle r = l5_water[i];
+        //the dark of the water under the edge, so the hole reads as depth
+        DrawRectangle(r.x-8*l5_u,r.y-8*l5_u,r.width+16*l5_u,r.height+16*l5_u,l5_crevasse);
+        BeginScissorMode(r.x,r.y,r.width,r.height);
+        int columns = r.width/(256*l5_u) + 2;
+        int rows = r.height/(256*l5_u) + 2;
+        for (int cx=0; cx<columns; cx++)
+        {
+            for (int cy=0; cy<rows; cy++)
+            {
+                Rectangle tile = {r.x+cx*256*l5_u,r.y+cy*256*l5_u,256*l5_u+1,256*l5_u+1};
+                DrawTexturePro(l5_water_texture,water_source,tile,no_water_origin,0,GetColor(0x9FC4D8FF));
+            }
+        }
+        //it is dark down there
+        DrawRectangle(r.x,r.y,r.width,r.height,Fade(l5_crevasse_deep,0.4));
+        //and there are lumps of the ice that used to be on top of it
+        for (int k=0; k<5; k++)
+        {
+            float bob = sin(l5_animation_time*0.8 + k*1.7)*5*l5_u;
+            float x = r.x + r.width*(0.14 + k*0.18);
+            float y = r.y + r.height*(0.3 + 0.4*sin(k*2.1)) + bob;
+            DrawCircleV((Vector2){x+3*l5_u,y+4*l5_u},17*l5_u,Fade(l5_crevasse_deep,0.5));
+            DrawCircleV((Vector2){x,y},17*l5_u,Fade(l5_ice_light,0.9));
+            DrawCircleV((Vector2){x-4*l5_u,y-4*l5_u},9*l5_u,Fade(WHITE,0.9));
+        }
+        //sheets of ice pushing in at the corners, so the open water is a ragged shape
+        //and not a rectangular pool
+        DrawTriangle((Vector2){r.x,r.y},(Vector2){r.x,r.y+r.height*0.42},(Vector2){r.x+r.width*0.3,r.y},Fade(WHITE,0.95));
+        DrawTriangle((Vector2){r.x+r.width,r.y},(Vector2){r.x+r.width-r.width*0.22,r.y},(Vector2){r.x+r.width,r.y+r.height*0.5},Fade(WHITE,0.95));
+        DrawTriangle((Vector2){r.x,r.y+r.height},(Vector2){r.x+r.width*0.26,r.y+r.height},(Vector2){r.x,r.y+r.height*0.55},Fade(WHITE,0.95));
+        DrawTriangle((Vector2){r.x+r.width,r.y+r.height},(Vector2){r.x+r.width,r.y+r.height*0.46},(Vector2){r.x+r.width-r.width*0.34,r.y+r.height},Fade(WHITE,0.95));
+        EndScissorMode();
+        l5_draw_foam(r,Fade(WHITE,0.7));
+        //the broken edge of the ice all the way round, in slabs of different sizes, so the
+        //hole has a torn edge instead of a drawn border
+        for (int k=0; k<16; k++)
+        {
+            float along = k/15.0;
+            float lump = (8 + 5*sin(k*2.7+i))*l5_u;
+            DrawCircleV((Vector2){r.x+along*r.width,r.y},lump,Fade(WHITE,0.95));
+            DrawCircleV((Vector2){r.x+along*r.width,r.y+r.height},lump*0.9,Fade(WHITE,0.95));
+        }
+        for (int k=0; k<9; k++)
+        {
+            float along = k/8.0;
+            float lump = (8 + 4*cos(k*2.1+i))*l5_u;
+            DrawCircleV((Vector2){r.x,r.y+along*r.height},lump,Fade(WHITE,0.95));
+            DrawCircleV((Vector2){r.x+r.width,r.y+along*r.height},lump*0.9,Fade(WHITE,0.95));
+        }
     }
 
     //deep powder: heaped snow you can stop in. Drawn as a bank of drifts rather than a
@@ -895,6 +1053,97 @@ void l5_draw_ground()
             DrawRing(middle,radius,radius+2*l5_u,turn,turn+200,24,Fade(WHITE,0.5));
         }
     }
+
+    //the mountain. The block underneath is what the ball hits; what you see is a ridge
+    //of peaks standing on it, so it reads as rock rather than as a grey panel.
+    for (int i=0; i<5; i++)
+    {
+        Rectangle r = l5_rock_wall[i];
+        int peaks = r.width/110*l5_u > 2 ? (int)(r.width/(110*l5_u)) : 2;
+        if (peaks>6) peaks = 6;
+        float step = r.width/peaks;
+
+        //the shadow it throws south onto the snow
+        DrawRectangle(r.x+10*l5_u,r.y+14*l5_u,r.width,r.height,Fade(l5_crevasse,0.25));
+
+        //the body
+        DrawRectangle(r.x,r.y,r.width,r.height,l5_rock_dark);
+        DrawRectangle(r.x+5*l5_u,r.y+5*l5_u,r.width-10*l5_u,r.height-10*l5_u,l5_rock);
+
+        //the peaks standing above the block, each with snow on it
+        for (int k=0; k<peaks; k++)
+        {
+            float x = r.x + k*step;
+            float lift = (54 + 30*sin(k*1.9 + i))*l5_u;
+            Vector2 left = {x,r.y+6*l5_u};
+            Vector2 top = {x+step/2,r.y-lift};
+            Vector2 right = {x+step,r.y+6*l5_u};
+            DrawTriangle(left,right,top,l5_rock_dark);
+            Vector2 inner_left = {x+6*l5_u,r.y+6*l5_u};
+            Vector2 inner_right = {x+step-6*l5_u,r.y+6*l5_u};
+            DrawTriangle(inner_left,inner_right,(Vector2){x+step/2,r.y-lift+9*l5_u},l5_rock);
+            //the snow cap
+            Vector2 cap_left = {x+step/2-lift*0.30,r.y-lift*0.42};
+            Vector2 cap_right = {x+step/2+lift*0.30,r.y-lift*0.42};
+            DrawTriangle(cap_left,cap_right,(Vector2){x+step/2,r.y-lift+6*l5_u},Fade(WHITE,0.95));
+        }
+
+        //faces down the body, and the snow that settled on its ledges
+        for (int k=0; k<peaks; k++)
+        {
+            float x = r.x + k*step;
+            DrawTriangle((Vector2){x+6*l5_u,r.y+r.height-6*l5_u},
+                         (Vector2){x+step-6*l5_u,r.y+r.height-6*l5_u},
+                         (Vector2){x+step/2,r.y+8*l5_u},
+                         Fade(l5_rock_dark,0.45));
+            DrawCircleV((Vector2){x+step/2,r.y+10*l5_u},16*l5_u,Fade(WHITE,0.85));
+        }
+        //a rim of snow along the foot of it
+        DrawRectangleGradientV(r.x,r.y+r.height-16*l5_u,r.width,16*l5_u,BLANK,Fade(WHITE,0.7));
+    }
+
+    //the igloo. The five blocks above are what the ball hits; this is the dome that sits
+    //on them, cut from snow, with a tunnel on the south side that you have to putt into.
+    Vector2 dome = {1710*l5_u,270*l5_u};
+    float outer = 152*l5_u;
+    float inner = 112*l5_u;
+    //a worn ring of trodden snow round it, then the dome itself with a hard blue edge
+    DrawCircleGradient(dome,outer+70*l5_u,Fade(l5_snow_shade,0.55),BLANK);
+    DrawCircleV((Vector2){dome.x+10*l5_u,dome.y+14*l5_u},outer,Fade(l5_ice,0.4));
+    DrawCircleV(dome,outer,l5_ice);
+    DrawCircleV(dome,outer-4*l5_u,GetColor(0xDCE9F3FF));
+    DrawCircleV(dome,outer-9*l5_u,GetColor(0xF6FAFDFF));
+    //courses of cut blocks, each ring offset from the one below
+    for (int ring=0; ring<3; ring++)
+    {
+        float radius = outer - 12*l5_u - ring*13*l5_u;
+        DrawCircleLines(dome.x,dome.y,radius,Fade(l5_ice,0.5));
+        for (int k=0; k<11+ring*2; k++)
+        {
+            float a = (k*360.0/(11+ring*2) + ring*14)*DEG2RAD;
+            Vector2 from = {dome.x+cos(a)*radius,dome.y+sin(a)*radius};
+            Vector2 to = {dome.x+cos(a)*(radius-13*l5_u),dome.y+sin(a)*(radius-13*l5_u)};
+            DrawLineEx(from,to,2*l5_u,Fade(l5_ice,0.5));
+        }
+    }
+    //the inside: packed snow, warm from whatever is burning in there
+    DrawCircleV(dome,inner,GetColor(0xDCE9F3FF));
+    DrawCircleGradient(dome,inner,Fade(l5_warm,0.30),BLANK);
+    DrawCircleLines(dome.x,dome.y,inner,Fade(l5_ice,0.6));
+
+    //the tunnel: a short porch of blocks on the south side, with the way in under it.
+    //It lines up with the gap in the wall, so what you aim at is what lets you through.
+    DrawRectangleRounded((Rectangle){1662*l5_u,330*l5_u,96*l5_u,104*l5_u},0.35,8,l5_ice);
+    DrawRectangleRounded((Rectangle){1667*l5_u,334*l5_u,86*l5_u,98*l5_u},0.35,8,GetColor(0xF6FAFDFF));
+    for (int k=1; k<4; k++)
+        DrawLineEx((Vector2){1667*l5_u,(334+k*24)*l5_u},(Vector2){1753*l5_u,(334+k*24)*l5_u},2*l5_u,Fade(l5_ice,0.45));
+    //the dark of the way in, and the firelight on the floor of it
+    DrawRectangleRounded((Rectangle){1676*l5_u,336*l5_u,68*l5_u,84*l5_u},0.45,8,Fade(l5_crevasse,0.42));
+    DrawCircleGradient((Vector2){1710*l5_u,352*l5_u},96*l5_u,Fade(l5_warm,0.5),BLANK);
+    //the lamp hung over the door
+    float glow = 0.6 + 0.25*sin(l5_animation_time*2.2);
+    DrawCircleV((Vector2){1710*l5_u,428*l5_u},9*l5_u,Fade(l5_warm,glow));
+    DrawCircleGradient((Vector2){1710*l5_u,428*l5_u},70*l5_u,Fade(l5_warm,0.3*glow),BLANK);
 
     //the planks of the two crossings
     for (int b=0; b<2; b++)
@@ -1173,7 +1422,7 @@ void l5_draw_hud()
     //what just happened
     if (l5_message_timer>0)
     {
-        const char *say = "CREVASSE!";
+        const char *say = "THROUGH THE ICE!";
         if (l5_message_type==2) say = "BURIED!";
         if (l5_message_type==3) say = "SMASHED!";
         if (l5_message_type==4) say = "AVALANCHE!";
@@ -1243,6 +1492,9 @@ void l5_start(int screen_width, int screen_height)
     l5_boulder_texture = LoadTexture("assets/frozen/frozen_boulder.png");
     l5_spindrift_texture = LoadTexture("assets/frozen/frozen_spindrift.png");
     l5_sign_texture = LoadTexture("assets/frozen/frozen_sign.png");
+    //the water and its foam are the shoreline's, tinted cold
+    l5_water_texture = LoadTexture("assets/beach/beach_water_tile.png");
+    l5_foam_texture = LoadTexture("assets/beach/beach_foam_strip.png");
     SetTextureWrap(l5_snow_texture,TEXTURE_WRAP_REPEAT);
     SetTextureWrap(l5_ice_texture,TEXTURE_WRAP_REPEAT);
     SetTextureFilter(l5_snow_texture,TEXTURE_FILTER_BILINEAR);
@@ -1260,6 +1512,8 @@ void l5_start(int screen_width, int screen_height)
     SetTextureFilter(l5_boulder_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_spindrift_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_sign_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_water_texture,TEXTURE_FILTER_BILINEAR);
+    SetTextureFilter(l5_foam_texture,TEXTURE_FILTER_BILINEAR);
 
     //every size is N*l5_u, so it looks the same on any screen
     l5_u = l5_height/1080.0;
@@ -1337,4 +1591,6 @@ void l5_unload()
     UnloadTexture(l5_boulder_texture);
     UnloadTexture(l5_spindrift_texture);
     UnloadTexture(l5_sign_texture);
+    UnloadTexture(l5_water_texture);
+    UnloadTexture(l5_foam_texture);
 }
