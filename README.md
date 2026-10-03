@@ -69,16 +69,12 @@ Run it **from the project root**, so that it finds `assets/`. The window opens b
 
 The whole game is one C file, built as four level modules plus a shell that owns the intro, the menu, the briefings, the scoring and the sound. There are no classes, no inheritance and no hidden state — a level is a set of globals and four functions (`start`, `update`, `draw`, `unload`).
 
-**[Read the full code guide →](https://fahim-2135.github.io/the-ultimate-golf/)**
-
-It's a 114-section walkthrough of the entire codebase, from the game loop and the collision maths up to the level systems, the graphics tricks and the testing tools. Every code box in it is pulled straight out of the source.
-
 ## Layout
 
 ```
 src/        the game, one file
 assets/     sprites and audio
-docs/       the code guide (published with GitHub Pages)
+docs/       planning notes and sprite prompts
 screenshots/
 ```
 
