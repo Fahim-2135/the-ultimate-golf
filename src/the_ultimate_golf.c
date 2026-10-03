@@ -795,6 +795,16 @@ void draw_menu()
             DrawRectangleRounded(tag,0.4,8,Fade(BLACK,0.7));
             DrawText(best,tag.x+18*su,tag.y+8*su,30*su,card_colour[n]);
         }
+        //levels 5, 6 and 7 are still being built, and the card says so
+        if (n>=4)
+        {
+            const char *wip = "WORK IN PROGRESS";
+            float wip_w = MeasureText(wip,26*su)+36*su;
+            Rectangle tag = {d.x+16*su,d.y+16*su,wip_w,42*su};
+            DrawRectangleRounded(tag,0.4,8,Fade(BLACK,0.75));
+            DrawRectangleRoundedLines(tag,0.4,8,Fade(card_colour[n],0.8));
+            DrawText(wip,tag.x+18*su,tag.y+8*su,26*su,card_colour[n]);
+        }
         if (hover==1) DrawRectangleLinesEx(d,5*su,card_colour[n]);
         else DrawRectangleLinesEx(d,3*su,Fade(card_colour[n],0.7));
 
