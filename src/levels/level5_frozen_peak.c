@@ -76,12 +76,12 @@ float l5_drift_timer = 0;
 //two crossings over the big crevasse: the gondola is slow and safe, the bridge is quick and breaks
 //plank state: 0 solid, 1 cracking, 2 gone
 Rectangle l5_plank[2][7];
-int l5_plank_count[2] = {5,7};
+int l5_plank_count[2] = {7,7};
 int l5_plank_state[2][7];
 float l5_plank_timer[2][7];
 //how long a plank holds once you are standing on it. Short on purpose: you cross a
 //boardwalk at speed or you go in.
-float l5_plank_crack_time[2] = {0.3,0.2};
+float l5_plank_crack_time[2] = {1.6,1.2};
 
 //the gondola carries the ball across
 Rectangle l5_gondola;
@@ -225,8 +225,10 @@ void l5_reset_level()
     l5_drift_timer = 0;
 
     //boardwalks over the two biggest leads, for anyone who would rather not go round
-    for (int i=0; i<5; i++) l5_plank[0][i] = l5_make_rect(490+i*62,812,62,100);
-    for (int i=0; i<7; i++) l5_plank[1][i] = l5_make_rect(1150+i*54,608,54,90);
+    //bank to bank, with a landing on the solid ice at each end. A boardwalk that stops
+    //short of the shore is a boardwalk nobody can get onto.
+    for (int i=0; i<7; i++) l5_plank[0][i] = l5_make_rect(336+i*84,795,84,130);
+    for (int i=0; i<7; i++) l5_plank[1][i] = l5_make_rect(1072+i*74,598,74,110);
     for (int b=0; b<2; b++)
     {
         for (int i=0; i<7; i++)
