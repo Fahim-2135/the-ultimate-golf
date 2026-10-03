@@ -34,7 +34,6 @@ Texture2D l5_campfire_texture;
 Texture2D l5_icicle_texture;
 Texture2D l5_ibex_texture;
 Texture2D l5_flags_texture;
-Texture2D l5_toboggan_texture;
 Texture2D l5_crate_texture;
 Texture2D l5_boulder_texture;
 Texture2D l5_spindrift_texture;
@@ -80,7 +79,9 @@ Rectangle l5_plank[2][7];
 int l5_plank_count[2] = {5,7};
 int l5_plank_state[2][7];
 float l5_plank_timer[2][7];
-float l5_plank_crack_time[2] = {0.6,0.35};
+//how long a plank holds once you are standing on it. Short on purpose: you cross a
+//boardwalk at speed or you go in.
+float l5_plank_crack_time[2] = {0.3,0.2};
 
 //the gondola carries the ball across
 Rectangle l5_gondola;
@@ -129,11 +130,6 @@ float l5_ibex_radius;
 Vector2 l5_flagline[3];
 float l5_flagline_width[3];
 
-//the toboggan runs a lane and knocks the ball off it
-Rectangle l5_toboggan;
-float l5_toboggan_from;
-float l5_toboggan_to;
-float l5_toboggan_speed;
 
 //supply crates are solid, ice boulders are bouncy, signposts are scenery
 Rectangle l5_crate[3];
@@ -192,8 +188,10 @@ void l5_reset_level()
 
     //the open water in them. This is the only thing on the level that can swallow a shot
     //outright, and all four are plainly visible.
-    l5_water[0] = l5_make_rect(440,760,380,200);
-    l5_water[1] = l5_make_rect(1150,560,390,180);
+    //the two leads the boardwalks cross are wider than the boardwalk, so the crossing is
+    //a line you take rather than a lid over the hole
+    l5_water[0] = l5_make_rect(370,748,530,226);
+    l5_water[1] = l5_make_rect(1100,548,470,206);
     l5_water[2] = l5_make_rect(300,300,260,130);
     l5_water[3] = l5_make_rect(1420,910,280,100);
 
@@ -216,17 +214,19 @@ void l5_reset_level()
     //deep powder: the places you can stop dead
     //two banks of deep powder, each one a place worth aiming at
     l5_powder[0] = l5_make_rect(280,120,190,110);
-    l5_powder[1] = l5_make_rect(1670,500,180,120);
+    l5_powder[1] = l5_make_rect(1690,430,170,110);
     l5_powder[2] = l5_make_rect(-900,-900,10,10);
 
     //two holes blown full of soft snow, out on the open field
-    l5_drift[0] = l5_make_rect(840,560,170,120);
-    l5_drift[1] = l5_make_rect(1690,760,160,110);
+    //two snow pits, both on ground you would otherwise roll straight over: one on the
+    //way out of the camp, one on the run up to the igloo
+    l5_drift[0] = l5_make_rect(560,620,190,130);
+    l5_drift[1] = l5_make_rect(1620,600,180,130);
     l5_drift_timer = 0;
 
     //boardwalks over the two biggest leads, for anyone who would rather not go round
-    for (int i=0; i<5; i++) l5_plank[0][i] = l5_make_rect(480+i*60,802,60,120);
-    for (int i=0; i<7; i++) l5_plank[1][i] = l5_make_rect(1168+i*52,598,52,106);
+    for (int i=0; i<5; i++) l5_plank[0][i] = l5_make_rect(490+i*62,812,62,100);
+    for (int i=0; i<7; i++) l5_plank[1][i] = l5_make_rect(1150+i*54,608,54,90);
     for (int b=0; b<2; b++)
     {
         for (int i=0; i<7; i++)
@@ -269,7 +269,7 @@ void l5_reset_level()
     l5_pine[1] = l5_make_point(990,960);
     l5_pine[2] = l5_make_point(1780,650);
     l5_pine[3] = l5_make_point(840,500);
-    l5_pine[4] = l5_make_point(400,170);
+    l5_pine[4] = l5_make_point(600,170);
 
     //campfires, out on the lakes: the only places on the ice where the ball has grip
     l5_campfire_radius = 95*l5_u;
@@ -314,20 +314,14 @@ void l5_reset_level()
     l5_flagline[2] = l5_make_point(-900,-900);
     l5_flagline_width[2] = 10*l5_u;
 
-    //the toboggan runs across the east shore
-    l5_toboggan = l5_make_rect(1000,800,100,150);
-    l5_toboggan_from = 760*l5_u;
-    l5_toboggan_to = 980*l5_u;
-    l5_toboggan_speed = 150*l5_u;
-
     //crates and boulders out on the snow
-    l5_crate[0] = l5_make_rect(560,620,76,76);
+    l5_crate[0] = l5_make_rect(850,478,76,76);
     l5_crate[1] = l5_make_rect(1480,180,76,76);
     l5_crate[2] = l5_make_rect(-900,-900,10,10);
     l5_boulder_radius = 34*l5_u;
     l5_boulder[0] = l5_make_point(160,900);
     l5_boulder[1] = l5_make_point(1120,830);
-    l5_boulder[2] = l5_make_point(1540,440);
+    l5_boulder[2] = l5_make_point(1480,860);
     l5_boulder[3] = l5_make_point(-900,-900);
     for (int i=0; i<4; i++) l5_boulder_hit[i] = 0;
 
@@ -481,19 +475,6 @@ void l5_update_obstacles(float dt)
             l5_ibex[i].x = l5_ibex_to[i];
             l5_ibex_speed[i] = -fabsf(l5_ibex_speed[i]);
         }
-    }
-
-    //the toboggan runs up and down its lane
-    l5_toboggan.y = l5_toboggan.y + l5_toboggan_speed*dt;
-    if (l5_toboggan.y<l5_toboggan_from)
-    {
-        l5_toboggan.y = l5_toboggan_from;
-        l5_toboggan_speed = fabsf(l5_toboggan_speed);
-    }
-    if (l5_toboggan.y>l5_toboggan_to)
-    {
-        l5_toboggan.y = l5_toboggan_to;
-        l5_toboggan_speed = -fabsf(l5_toboggan_speed);
     }
 
     for (int i=0; i<4; i++)
@@ -689,6 +670,12 @@ void l5_update_ball(float dt)
     {
         if (CheckCollisionPointRec(l5_ball,l5_powder[i])) friction = 430*l5_u;
     }
+    //a snow pit drags harder than anything else on the mountain. Roll into one slowly and
+    //it will stop you, and once you are stopped it has you.
+    for (int i=0; i<2; i++)
+    {
+        if (CheckCollisionPointRec(l5_ball,l5_drift[i])) friction = 1100*l5_u;
+    }
     float ball_speed = Vector2Length(l5_speed);
     if (ball_speed>0)
     {
@@ -720,7 +707,7 @@ void l5_update_ball(float dt)
     if (in_drift==1 && Vector2Length(l5_speed)<10*l5_u)
     {
         l5_drift_timer = l5_drift_timer + dt;
-        if (l5_drift_timer>=3)
+        if (l5_drift_timer>=1.2)
         {
             l5_send_ball_back();
             l5_message_type = 2;
@@ -801,10 +788,6 @@ void l5_update_ball(float dt)
             l5_speed.x = l5_speed.x + ibex_speed.x*0.3;
         }
     }
-
-    //the toboggan knocks the ball down the lane
-    Vector2 sled_speed = {0,l5_toboggan_speed};
-    l5_bounce_off_rectangle(l5_toboggan,sled_speed);
 
     //the gondola's walls push the ball along when it slides into one
     if (on_gondola==0)
@@ -1264,10 +1247,6 @@ void l5_draw_obstacles()
         DrawTexturePro(l5_boulder_texture,source,dest,origin,i*23,WHITE);
     }
 
-    //the toboggan
-    Rectangle sled_source = {(l5_toboggan_speed>0 ? 256 : 0),0,256,256};
-    DrawTexturePro(l5_toboggan_texture,sled_source,l5_toboggan,no_origin,0,WHITE);
-
     //the ibex pacing their lanes
     for (int i=0; i<3; i++)
     {
@@ -1499,7 +1478,6 @@ void l5_start(int screen_width, int screen_height)
     l5_icicle_texture = LoadTexture("assets/frozen/frozen_icicle.png");
     l5_ibex_texture = LoadTexture("assets/frozen/frozen_ibex.png");
     l5_flags_texture = LoadTexture("assets/frozen/frozen_flags.png");
-    l5_toboggan_texture = LoadTexture("assets/frozen/frozen_toboggan.png");
     l5_crate_texture = LoadTexture("assets/frozen/frozen_crate.png");
     l5_boulder_texture = LoadTexture("assets/frozen/frozen_boulder.png");
     l5_spindrift_texture = LoadTexture("assets/frozen/frozen_spindrift.png");
@@ -1519,7 +1497,6 @@ void l5_start(int screen_width, int screen_height)
     SetTextureFilter(l5_icicle_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_ibex_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_flags_texture,TEXTURE_FILTER_BILINEAR);
-    SetTextureFilter(l5_toboggan_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_crate_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_boulder_texture,TEXTURE_FILTER_BILINEAR);
     SetTextureFilter(l5_spindrift_texture,TEXTURE_FILTER_BILINEAR);
@@ -1598,7 +1575,6 @@ void l5_unload()
     UnloadTexture(l5_icicle_texture);
     UnloadTexture(l5_ibex_texture);
     UnloadTexture(l5_flags_texture);
-    UnloadTexture(l5_toboggan_texture);
     UnloadTexture(l5_crate_texture);
     UnloadTexture(l5_boulder_texture);
     UnloadTexture(l5_spindrift_texture);
